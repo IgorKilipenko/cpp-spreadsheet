@@ -140,7 +140,33 @@ namespace ASTImpl {
 
             // Реализуйте метод Evaluate() для бинарных операций.
             // При делении на 0 выбрасывайте ошибку вычисления FormulaError
-            double Evaluate() const override {}
+            double Evaluate() const override {
+                double res;
+                switch (type_) {
+                case Type::Add: {
+                    res = lhs_->Evaluate() + rhs_->Evaluate();
+                    break;
+                }
+                case Type::Subtract: {
+                    res = lhs_->Evaluate() - rhs_->Evaluate();
+                    break;
+                }
+                case Type::Multiply: {
+                    res = lhs_->Evaluate() * rhs_->Evaluate();
+                    break;
+                }
+                case Type::Divide: {
+                    res = lhs_->Evaluate() / rhs_->Evaluate();
+                    break;
+                }
+                default:
+                    assert(false);
+                }
+                if (!std::isfinite(res)) {
+                    throw FormulaError(FormulaError("DIV/0"));
+                }
+                return res;
+            }
 
         private:
             Type type_;
@@ -174,7 +200,16 @@ namespace ASTImpl {
             }
 
             // Реализуйте метод Evaluate() для унарных операций.
-            double Evaluate() const override {}
+            double Evaluate() const override {
+                switch (type_) {
+                case Type::UnaryPlus:
+                    return +operand_->Evaluate();
+                case Type::UnaryMinus:
+                    return -operand_->Evaluate();
+                default:
+                    assert(false);
+                }
+            }
 
         private:
             Type type_;
