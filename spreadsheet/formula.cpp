@@ -9,7 +9,7 @@
 
 using namespace std::literals;
 
-std::ostream& operator<<(std::ostream& output, FormulaError fe) {
+std::ostream &operator<<(std::ostream &output, FormulaError fe) {
     return output << "#DIV/0!";
 }
 
@@ -20,6 +20,23 @@ namespace {
         //! explicit Formula(std::string expression)
         //! Value Evaluate() const override
         //! std::string GetExpression() const override
+        explicit Formula(std::string expression) : ast_(ParseFormulaAST(expression)){};
+
+        Value Evaluate() const override {
+            Value res;
+            try {
+                res = ast_.Execute();
+            } catch (const FormulaError &err) {
+                res = err;
+            }
+            return res;
+        }
+
+        std::string GetExpression() const override {
+            std::ostringstream out;
+            ast_.PrintFormula(out);
+            return out.str();
+        }
 
     private:
         FormulaAST ast_;
@@ -27,5 +44,9 @@ namespace {
 }  // namespace
 
 std::unique_ptr<FormulaInterface> ParseFormula(std::string expression) {
-    return std::make_unique<Formula>(std::move(expression));
+    try {
+        return std::make_unique<Formula>(expression);
+    } catch (...) {
+        throw FormulaException("Parsing formula from expression was failure"s);
+    }
 }

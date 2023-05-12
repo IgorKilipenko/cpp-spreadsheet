@@ -18,5 +18,6 @@
     //"C_Cpp.errorSquiggles": "Disabled"
     "cmake.sourceDirectory": "${workspaceFolder}",
     "cSpell.words": [
+        "antlr"
     ],
 }
