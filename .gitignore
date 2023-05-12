@@ -32,6 +32,7 @@
 *.app
 
 build
+bin
 
 #.vscode/settings.*
 .cache
