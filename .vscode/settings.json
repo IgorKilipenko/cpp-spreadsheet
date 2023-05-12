@@ -3,10 +3,10 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "TESTS": "0",
         "FSANITIZE_DEBUG": "0",
-        "WARNINGS_AS_ERRORS" : "ON",
-        "LOGGING" : "ON",
-        "TRACE" : 1,
-        "JSONLIB_TRACE" : 0,
+        "WARNINGS_AS_ERRORS": "ON",
+        "LOGGING": "ON",
+        "TRACE": 1,
+        "JSONLIB_TRACE": 0
     },
     "[cpp]": {
         "editor.suggestSelection": "recentlyUsedByPrefix",
@@ -17,7 +17,5 @@
     },
     //"C_Cpp.errorSquiggles": "Disabled"
     "cmake.sourceDirectory": "${workspaceFolder}",
-    "cSpell.words": [
-        "antlr"
-    ],
+    "cSpell.words": ["antlr"]
 }
