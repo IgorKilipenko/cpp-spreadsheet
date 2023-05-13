@@ -20,6 +20,9 @@ void Sheet::SetCell(Position pos, std::string text) {
     size_.rows = pos.row - size_.rows >= 0 ? pos.row + 1 : size_.rows;
     size_.cols = pos.col - size_.cols >= 0 ? pos.col + 1 : size_.cols;
 
+    auto row_it = sheet_.find(pos.row);
+    row_it = row_it != sheet_.end() ? row_it : sheet_.emplace(pos.row, Column()).first;
+
     if (const auto row_it = sheet_.find(pos.row); row_it != sheet_.end()) {
         if (const auto cell_it = row_it->second.find(pos.col); cell_it != row_it->second.end()) {
             cell_it->second->Set(std::move(text));
@@ -29,12 +32,6 @@ void Sheet::SetCell(Position pos, std::string text) {
             value->Set(std::move(text));
             row_it->second.emplace(pos.col, std::move(value));
         }
-    } else {
-        auto value = std::make_unique<Cell>();
-        value->Set(std::move(text));
-        Column new_column;
-        new_column.emplace(pos.col, std::move(value));
-        sheet_.emplace(pos.row, std::move(new_column));
     }
 }
 
@@ -113,14 +110,14 @@ void Sheet::PrintTexts(std::ostream& output) const {
 }
 
 Size Sheet::CalculateSize_() const {
-    Size new_size{-1, -1};
+    Size size{-1, -1};
     for (const auto& [row, col_map] : sheet_) {
-        new_size.rows = new_size.rows < row ? row : new_size.rows;
+        size.rows = size.rows < row ? row : size.rows;
         for (const auto& [col, _] : col_map) {
-            new_size.cols = new_size.cols < col ? col : new_size.cols;
+            size.cols = size.cols < col ? col : size.cols;
         }
     }
-    return {new_size.rows + 1, new_size.cols + 1};
+    return {size.rows + 1, size.cols + 1};
 }
 
 std::unique_ptr<SheetInterface> CreateSheet() {
