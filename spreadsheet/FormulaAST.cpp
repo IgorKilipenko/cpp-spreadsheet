@@ -138,8 +138,8 @@ namespace ASTImpl {
                 }
             }
 
-            // Реализуйте метод Evaluate() для бинарных операций.
-            // При делении на 0 выбрасывайте ошибку вычисления FormulaError
+            // Метод Evaluate() для бинарных операций.
+            // При делении на 0 выбрасывает ошибку вычисления FormulaError
             double Evaluate() const override {
                 double res;
                 switch (type_) {
@@ -163,7 +163,7 @@ namespace ASTImpl {
                     assert(false);
                 }
                 if (!std::isfinite(res)) {
-                    throw FormulaError(FormulaError("DIV/0"));
+                    throw FormulaError(FormulaError::Category::Div0);
                 }
                 return res;
             }
@@ -199,7 +199,7 @@ namespace ASTImpl {
                 return EP_UNARY;
             }
 
-            // Реализуйте метод Evaluate() для унарных операций.
+            // Метод Evaluate() для унарных операций.
             double Evaluate() const override {
                 switch (type_) {
                 case Type::UnaryPlus:
