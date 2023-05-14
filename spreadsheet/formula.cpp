@@ -16,10 +16,6 @@ std::ostream &operator<<(std::ostream &output, FormulaError fe) {
 namespace {
     class Formula : public FormulaInterface {
     public:
-        // Реализуйте следующие методы:
-        //! explicit Formula(std::string expression)
-        //! Value Evaluate() const override
-        //! std::string GetExpression() const override
         explicit Formula(std::string expression) : ast_(ParseFormulaAST(expression)){};
 
         Value Evaluate() const override {
