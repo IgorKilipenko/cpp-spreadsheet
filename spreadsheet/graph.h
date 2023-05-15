@@ -15,11 +15,13 @@
 namespace graph {
 
     using VertexId = Position;
-    using EdgeId = Position;
 
     struct Edge {
         VertexId from;
         VertexId to;
+        bool operator==(const Edge& other) const {
+            return from == other.from && to == other.to;
+        }
     };
 
     struct Hasher {
@@ -37,7 +39,7 @@ namespace graph {
         }
 
         std::size_t operator()(const Edge& edge) const {
-            return this->operator()(edge.from) + this->operator()(edge.to);
+            return this->operator()(edge.from) + this->operator()(edge.to) * INDEX;
         }
 
     private:
@@ -47,9 +49,9 @@ namespace graph {
 
     class Graph {
     public:
-        using IncidenceList = std::unordered_set<EdgeId, Hasher>;
+        using IncidenceList = std::unordered_set<Edge, Hasher>;
         using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;
-        using EdgeContainer = std::unordered_map<EdgeId, Edge, Hasher, std::less<EdgeId>>;
+        using EdgeContainer = std::unordered_set<Edge, Hasher>;
         using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
 
     public:
@@ -57,17 +59,13 @@ namespace graph {
 
         Graph(EdgeContainer&& edges, IncidentEdges&& incidence_lists);
 
-        template <typename TEdge, std::enable_if_t<std::is_same_v<std::decay_t<TEdge>, Edge>, bool> = true>
-        EdgeId AddEdge(TEdge&& edge);
-        bool HasEdge(const EdgeId& id) const;
-        const Edge* GetEdge(const EdgeId& id) const;
+        bool AddEdge(Edge edge);
+        bool HasEdge(const Edge& edge) const;
         size_t GetVertexCount() const;
         size_t GetEdgeCount() const;
         IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
-        template <typename TEdge, std::enable_if_t<std::is_same_v<std::decay_t<TEdge>, Edge>, bool> = true>
-        bool EraseEdge(TEdge&& edge);
-        template <typename TEdgeId, std::enable_if_t<std::is_same_v<std::decay_t<TEdgeId>, EdgeId>, bool> = true>
-        bool EraseEdge(TEdgeId&& edge_id);
+        bool EraseEdge(const Edge& edge);
+        bool DetectCircularDeps(const VertexId& vertex_id) const;
 
     private:
         EdgeContainer edges_;
@@ -77,35 +75,27 @@ namespace graph {
     inline Graph::Graph(EdgeContainer&& edges, IncidentEdges&& incidence_lists)
         : edges_(std::move(edges)), incidence_lists_(std::move(incidence_lists)) {}
 
-    template <typename TEdge, std::enable_if_t<std::is_same_v<std::decay_t<TEdge>, Edge>, bool>>
-    EdgeId Graph::AddEdge(TEdge&& edge) {
-        edges_[edge.from] = edge;
+    inline bool Graph::AddEdge(Edge edge) {
+        auto emplaced_edge = edges_.emplace(edge);
+        if (!emplaced_edge.second) {
+            return false;
+        }
 
-        incidence_lists_[edge.from].emplace(edge.to);
-        return edge.from;
+        incidence_lists_[emplaced_edge.first->from].emplace(*emplaced_edge.first);
+        return true;
     }
 
-    inline bool Graph::HasEdge(const EdgeId& edge_id) const {
-        return edges_.count(edge_id) != 0;
+    inline bool Graph::HasEdge(const Edge& edge) const {
+        return edges_.count(edge) != 0;
     }
 
-    template <typename TEdge, std::enable_if_t<std::is_same_v<std::decay_t<TEdge>, Edge>, bool>>
-    bool Graph::EraseEdge(TEdge&& edge) {
-        if (!edges_.erase(edge.from)) {
+    inline bool Graph::EraseEdge(const Edge& edge) {
+        if (!edges_.erase(edge)) {
             return false;
         }
 
         incidence_lists_.erase(edge.from);
         return true;
-    }
-
-    template <typename TEdgeId, std::enable_if_t<std::is_same_v<std::decay_t<TEdgeId>, EdgeId>, bool>>
-    bool Graph::EraseEdge(TEdgeId&& edge_id) {
-        const Edge* edge = GetEdge(edge_id);
-        if (edge == nullptr) {
-            return false;
-        }
-        return EraseEdge(*edge);
     }
 
     inline size_t Graph::GetVertexCount() const {
@@ -120,8 +110,22 @@ namespace graph {
         return ranges::AsRange(incidence_lists_.at(vertex));
     }
 
-    inline const Edge* Graph::GetEdge(const EdgeId& id) const {
-        auto edge_it = edges_.find(id);
-        return edge_it == edges_.end() ? nullptr : &edge_it->second;
+    bool Graph::DetectCircularDeps(const VertexId& vertex_id) const {
+        /*const auto incident_edge_it = incidence_lists_.find(vertex_id);
+        if (incident_edge_it == incidence_lists_.end() || incident_edge_it->second.empty()) {
+            return false;
+        }
+
+        IncidenceList resolved_edges;
+        const auto resolve =[&] (const Edge& edge) {
+            if (resolved_edges.count(edge)) {
+                return false;
+            }
+
+            resolved_edges.emplace(edge);
+            
+        };*/
+
+        return false;
     }
 }
