@@ -26,7 +26,7 @@ namespace /* Sheet implementation public methods */ {
                 cell_it->second->Set(std::move(text));
                 return;
             } else {
-                auto value = std::make_unique<Cell>();
+                auto value = std::make_unique<Cell>(*this);
                 value->Set(std::move(text));
                 row_it->second.emplace(pos.col, std::move(value));
             }

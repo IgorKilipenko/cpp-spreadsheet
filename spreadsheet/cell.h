@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <variant>
 
 #include "common.h"
@@ -8,22 +9,31 @@
 
 class Cell : public CellInterface {
 public:
-    Cell();
+    explicit Cell(SheetInterface& sheet);
     ~Cell();
 
-    void Set(std::string text) override;
+    void Set(std::string text);
     void Clear();
 
     Value GetValue() const override;
     std::string GetText() const override;
 
+    std::vector<Position> GetReferencedCells() const override;
+
+    private: 
+    bool DetectCircularDeps_(const std::vector<Position>&) const {
+        return false;
+    }
+
 private:
-    // можете воспользоваться нашей подсказкой, но это необязательно.
     class Impl {
     public:
         virtual ~Impl() = default;
         virtual CellInterface::Value GetValue() const = 0;
         virtual std::string GetText() const = 0;
+        virtual std::vector<Position> GetReferencedCells() const {
+            return {};
+        }
     };
 
     class EmptyImpl : public Impl {
@@ -53,9 +63,9 @@ private:
 
     class FormulaImpl : public Impl {
     public:
-        explicit FormulaImpl(std::string text) : formula_{ParseFormula(std::move(text))} {}
+        FormulaImpl(std::string text, SheetInterface &sheet) : formula_{ParseFormula(std::move(text))}, sheet_{sheet} {}
         CellInterface::Value GetValue() const override {
-            FormulaInterface::Value val = formula_->Evaluate();
+            FormulaInterface::Value val = formula_->Evaluate(sheet_);
             if (std::holds_alternative<double>(val)) {
                 return std::get<double>(val);
             }
@@ -65,10 +75,17 @@ private:
             return '=' + formula_->GetExpression();
         }
 
+        std::vector<Position> GetReferencedCells() const override {
+            return formula_->GetReferencedCells();
+        }
+
     private:
         std::unique_ptr<FormulaInterface> formula_;
+        const SheetInterface &sheet_;
+        std::unique_ptr<FormulaInterface::Value> cache_;
     };
 
 private:
     std::unique_ptr<Impl> impl_;
+    SheetInterface& sheet_;
 };
