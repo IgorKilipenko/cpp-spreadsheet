@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -9,6 +10,7 @@
 #include "FormulaBaseListener.h"
 #include "FormulaLexer.h"
 #include "FormulaParser.h"
+#include "common.h"
 
 namespace ASTImpl {
 
@@ -72,7 +74,7 @@ namespace ASTImpl {
         virtual ~Expr() = default;
         virtual void Print(std::ostream& out) const = 0;
         virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-        virtual double Evaluate() const = 0;
+        virtual double Evaluate(LookupValue lookup_value) const = 0;
 
         // higher is tighter
         virtual ExprPrecedence GetPrecedence() const = 0;
@@ -92,8 +94,11 @@ namespace ASTImpl {
             }
         }
     };
+}
 
-    namespace {
+namespace ASTImpl /* Expr derivatives implementation */ {
+
+    namespace /* BinaryOpExpr implementation */ {
         class BinaryOpExpr final : public Expr {
         public:
             enum Type : char {
@@ -140,23 +145,24 @@ namespace ASTImpl {
 
             // Метод Evaluate() для бинарных операций.
             // При делении на 0 выбрасывает ошибку вычисления FormulaError
-            double Evaluate() const override {
+            double Evaluate(LookupValue lookup_value) const override {
                 double res;
+
                 switch (type_) {
                 case Type::Add: {
-                    res = lhs_->Evaluate() + rhs_->Evaluate();
+                    res = lhs_->Evaluate(lookup_value) + rhs_->Evaluate(lookup_value);
                     break;
                 }
                 case Type::Subtract: {
-                    res = lhs_->Evaluate() - rhs_->Evaluate();
+                    res = lhs_->Evaluate(lookup_value) - rhs_->Evaluate(lookup_value);
                     break;
                 }
                 case Type::Multiply: {
-                    res = lhs_->Evaluate() * rhs_->Evaluate();
+                    res = lhs_->Evaluate(lookup_value) * rhs_->Evaluate(lookup_value);
                     break;
                 }
                 case Type::Divide: {
-                    res = lhs_->Evaluate() / rhs_->Evaluate();
+                    res = lhs_->Evaluate(lookup_value) / rhs_->Evaluate(lookup_value);
                     break;
                 }
                 default:
@@ -173,7 +179,9 @@ namespace ASTImpl {
             std::unique_ptr<Expr> lhs_;
             std::unique_ptr<Expr> rhs_;
         };
+    }
 
+    namespace /* UnaryOpExpr implementation */ {
         class UnaryOpExpr final : public Expr {
         public:
             enum Type : char {
@@ -200,12 +208,12 @@ namespace ASTImpl {
             }
 
             // Метод Evaluate() для унарных операций.
-            double Evaluate() const override {
+            double Evaluate(LookupValue lookup_value) const override {
                 switch (type_) {
                 case Type::UnaryPlus:
-                    return +operand_->Evaluate();
+                    return +operand_->Evaluate(lookup_value);
                 case Type::UnaryMinus:
-                    return -operand_->Evaluate();
+                    return -operand_->Evaluate(lookup_value);
                 default:
                     assert(false);
                 }
@@ -215,7 +223,9 @@ namespace ASTImpl {
             Type type_;
             std::unique_ptr<Expr> operand_;
         };
+    }
 
+    namespace /* NumberExpr implementation */ {
         class NumberExpr final : public Expr {
         public:
             explicit NumberExpr(double value) : value_(value) {}
@@ -233,13 +243,53 @@ namespace ASTImpl {
             }
 
             // Для чисел метод возвращает значение числа.
-            double Evaluate() const override {
+            double Evaluate(LookupValue /*lookup_value*/) const override {
                 return value_;
             }
 
         private:
             double value_;
         };
+
+    }
+
+    namespace /* CellExpr implementation */ {
+        class CellExpr final : public Expr {
+        public:
+            explicit CellExpr(const Position* cell) : cell_(cell) {}
+
+            void Print(std::ostream& out) const override {
+                if (!cell_->IsValid()) {
+                    out << FormulaError::Category::Ref;
+                } else {
+                    out << cell_->ToString();
+                }
+            }
+
+            void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
+                Print(out);
+            }
+
+            ExprPrecedence GetPrecedence() const override {
+                return EP_ATOM;
+            }
+
+            double Evaluate(LookupValue lookup_value) const override {
+                assert(lookup_value.has_value());
+                return lookup_value.value()(*cell_);
+            }
+
+        private:
+            const Position* cell_;
+            std::function<double(Position)> lookup_value_func_;
+            std::optional<FormulaError> error_;
+        };
+    }
+}
+
+namespace ASTImpl /* ASTListener implementation */ {
+
+    namespace /* ParseASTListener implementation */ {
 
         class ParseASTListener final : public FormulaBaseListener {
         public:
@@ -249,6 +299,10 @@ namespace ASTImpl {
                 args_.clear();
 
                 return root;
+            }
+
+            std::forward_list<Position> MoveCells() {
+                return std::move(cells_);
             }
 
         public:
@@ -282,6 +336,18 @@ namespace ASTImpl {
                 args_.push_back(std::move(node));
             }
 
+            void exitCell(FormulaParser::CellContext* ctx) override {
+                auto value_str = ctx->CELL()->getSymbol()->getText();
+                auto value = Position::FromString(value_str);
+                if (!value.IsValid()) {
+                    throw FormulaException("Invalid position: " + value_str);
+                }
+
+                cells_.push_front(value);
+                auto node = std::make_unique<CellExpr>(&cells_.front());
+                args_.push_back(std::move(node));
+            }
+
             void exitBinaryOp(FormulaParser::BinaryOpContext* ctx) override {
                 assert(args_.size() >= 2);
 
@@ -312,8 +378,11 @@ namespace ASTImpl {
 
         private:
             std::vector<std::unique_ptr<Expr>> args_;
+            std::forward_list<Position> cells_;
         };
+    }
 
+    namespace /* BailErrorListener implementation */ {
         class BailErrorListener : public antlr4::BaseErrorListener {
         public:
             void syntaxError(
@@ -323,9 +392,8 @@ namespace ASTImpl {
                 throw ParsingError("Error when lexing: " + msg);
             }
         };
-
-    }  // namespace
-}  // namespace ASTImpl
+    }
+}
 
 FormulaAST ParseFormulaAST(std::istream& in) {
     using namespace antlr4;
@@ -348,15 +416,17 @@ FormulaAST ParseFormulaAST(std::istream& in) {
     ASTImpl::ParseASTListener listener;
     tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
 
-    return FormulaAST(listener.MoveRoot());
+    return FormulaAST(listener.MoveRoot(), listener.MoveCells());
 }
 
 FormulaAST ParseFormulaAST(const std::string& in_str) {
     std::istringstream in(in_str);
-    try {
-        return ParseFormulaAST(in);
-    } catch (const std::exception& exc) {
-        std::throw_with_nested(FormulaException(exc.what()));
+    return ParseFormulaAST(in);
+}
+
+void FormulaAST::PrintCells(std::ostream& out) const {
+    for (auto cell : cells_) {
+        out << cell.ToString() << ' ';
     }
 }
 
@@ -368,10 +438,18 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute() const {
-    return root_expr_->Evaluate();
+double FormulaAST::Execute(LookupValue lookup_value) const {
+    return root_expr_->Evaluate(lookup_value);
 }
 
-FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr) : root_expr_(std::move(root_expr)) {}
+FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
+    : root_expr_(std::move(root_expr))
+    , cells_(std::move(cells)) {
+    cells_.sort();  // to avoid sorting in GetReferencedCells
+}
 
 FormulaAST::~FormulaAST() = default;
+
+const std::forward_list<Position>& FormulaAST::GetCells() const {
+    return cells_;
+}
