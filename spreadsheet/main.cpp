@@ -477,7 +477,17 @@ namespace tests {
             caught = true;
         }
         ASSERT(caught);
+    }
 
+    void TestSetPrint() {
+        auto sheet = CreateSheet();
+        std::ostringstream sizes;
+        for (int i = 0; i <= 5; ++i) {
+            sheet->SetCell(Position{i, i}, std::to_string(i));
+            sizes << sheet->GetPrintableSize();
+        }
+
+        ASSERT_EQUAL(sizes.str(), "(1, 1)(2, 2)(3, 3)(4, 4)(5, 5)(6, 6)");
     }
 }  // namespace
 
@@ -535,6 +545,7 @@ int main() {
     RUN_TEST(tr, tests::TestCellCircularReferences);
     RUN_TEST(tr, tests::TestCellCircularReferences2);
     RUN_TEST(tr, tests::TestGraphEdges);
+    RUN_TEST(tr, tests::TestSetPrint);
 
     // Print();
 
