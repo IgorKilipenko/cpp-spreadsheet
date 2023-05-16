@@ -25,6 +25,18 @@ namespace graph {
     };
 
     struct Hasher {
+        std::size_t operator()(const Position& pos) const {
+            return std::hash<int>()(pos.row) + std::hash<int>()(pos.col) * INDEX;
+        }
+
+        std::size_t operator()(const Edge& edge) const {
+            return this->operator()(edge.from) + this->operator()(edge.to) * INDEX;
+        }
+
+        size_t operator()(const Edge* item) const {
+            return this->operator()(*item);
+        }
+
         template <typename T>
         size_t operator()(std::initializer_list<const T*> items) const {
             size_t hash = 0;
@@ -34,14 +46,6 @@ namespace graph {
             return hash;
         }
 
-        std::size_t operator()(const Position& pos) const {
-            return std::hash<int>()(pos.row) + std::hash<int>()(pos.col) * INDEX;
-        }
-
-        std::size_t operator()(const Edge& edge) const {
-            return this->operator()(edge.from) + this->operator()(edge.to) * INDEX;
-        }
-
     private:
         std::hash<const void*> pointer_hasher_;
         static const size_t INDEX = 42;
@@ -49,7 +53,7 @@ namespace graph {
 
     class Graph {
     public:
-        using IncidenceList = std::unordered_set<Edge, Hasher>;
+        using IncidenceList = std::unordered_set<const Edge*, Hasher>;
         using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;
         using EdgeContainer = std::unordered_set<Edge, Hasher>;
         using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
@@ -65,8 +69,8 @@ namespace graph {
         size_t GetEdgeCount() const;
         IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
         bool EraseEdge(const Edge& edge);
-        bool EraseIncident(const VertexId& vertex_id);
-        // bool DetectCircularDeps(const VertexId& vertex_id) const;
+        bool EraseVertex(const VertexId& vertex_id);
+        // void Traverse(const VertexId& vertex_id);
 
     private:
         EdgeContainer edges_;
@@ -82,7 +86,7 @@ namespace graph {
             return false;
         }
 
-        incidence_lists_[emplaced_edge.first->from].emplace(*emplaced_edge.first);
+        incidence_lists_[emplaced_edge.first->from].emplace(&*emplaced_edge.first);
         return true;
     }
 
@@ -111,7 +115,7 @@ namespace graph {
         return ranges::AsRange(incidence_lists_.at(vertex));
     }
 
-    inline bool Graph::EraseIncident(const VertexId& vertex_id) {
+    inline bool Graph::EraseVertex(const VertexId& vertex_id) {
         const auto incidence_it = incidence_lists_.find(vertex_id);
         if (incidence_it == incidence_lists_.end()) {
             return false;
@@ -120,7 +124,7 @@ namespace graph {
             edges_.clear();
         } else {
             for (auto ptr = edges_.begin(), last = edges_.end(); ptr != last;) {
-                if (incidence_it->second.count(*ptr)) {
+                if (incidence_it->second.count(&*ptr)) {
                     ptr = edges_.erase(ptr);
                 } else {
                     ++ptr;
@@ -130,23 +134,4 @@ namespace graph {
         incidence_lists_.erase(incidence_it);
         return true;
     }
-
-    // bool Graph::DetectCircularDeps(const VertexId& vertex_id) const {
-    /*const auto incident_edge_it = incidence_lists_.find(vertex_id);
-    if (incident_edge_it == incidence_lists_.end() || incident_edge_it->second.empty()) {
-        return false;
-    }
-
-    IncidenceList resolved_edges;
-    const auto resolve =[&] (const Edge& edge) {
-        if (resolved_edges.count(edge)) {
-            return false;
-        }
-
-        resolved_edges.emplace(edge);
-
-    };*/
-
-    // return false;
-    //}
 }
