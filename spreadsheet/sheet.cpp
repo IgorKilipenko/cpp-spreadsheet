@@ -21,7 +21,7 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         size_.cols = pos.col - size_.cols >= 0 ? pos.col + 1 : size_.cols;
 
         auto rows_it = sheet_.find(pos.row);
-        
+
         std::unique_ptr<Cell> temp_cell;
         const auto cells_it = rows_it != sheet_.end() ? rows_it->second.find(pos.col) : rows_it->second.end();
 
@@ -31,6 +31,12 @@ namespace spreadsheet /* Sheet implementation public methods */ {
 
         auto tmp_cell = std::make_unique<Cell>(*this);
         tmp_cell->Set(std::move(text));
+        const auto& cell_refs = tmp_cell->GetStoredReferencedCells();
+        std::for_each(cell_refs.begin(), cell_refs.end(), [&](const Position& pos) {
+            if (!GetCell(pos)) {
+                SetCell(pos, "");
+            }
+        });
         BuildGraph_(pos, tmp_cell.get());
 
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;

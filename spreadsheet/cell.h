@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 #include <variant>
+#include <vector>
 
 #include "common.h"
 #include "formula.h"
@@ -19,6 +20,7 @@ public:
     std::string GetText() const override;
 
     std::vector<Position> GetReferencedCells() const override;
+    const std::vector<Position>& GetStoredReferencedCells() const;
 
 private:
     bool DetectCircularDeps_(const std::vector<Position>&) const {
@@ -88,4 +90,5 @@ private:
 private:
     std::unique_ptr<Impl> impl_;
     SheetInterface& sheet_;
+    std::vector<Position> cell_refs_;
 };
