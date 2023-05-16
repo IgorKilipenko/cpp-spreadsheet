@@ -22,8 +22,8 @@ namespace spreadsheet /* Sheet definations */ {
     public:
         void SetCell(Position pos, std::string text) override;
 
-        const CellInterface* GetCell(Position pos) const override;
-        CellInterface* GetCell(Position pos) override;
+        const Cell* GetCell(Position pos) const override;
+        Cell* GetCell(Position pos) override;
         
         void ClearCell(Position pos) override;
 
@@ -36,7 +36,7 @@ namespace spreadsheet /* Sheet definations */ {
 
     private:
         template <typename TPosition, std::enable_if_t<std::is_same_v<std::decay_t<TPosition>, Position>, bool> = true>
-        const Cell* GetCell_(TPosition&& pos) const;
+        const Cell* GetConstCell_(TPosition&& pos) const;
         void ValidatePosition_(const Position& pos) const;
         void CalculateSize_(Position&& erased_pos);
         void Print_(std::ostream& output, std::function<void(const CellInterface*)> print) const;
@@ -52,7 +52,7 @@ namespace spreadsheet /* Sheet definations */ {
 namespace spreadsheet /* Sheet template implementation */ {
 
     template <typename TPosition, std::enable_if_t<std::is_same_v<std::decay_t<TPosition>, Position>, bool>>
-    const Cell* Sheet::GetCell_(TPosition&& pos) const {
+    const Cell* Sheet::GetConstCell_(TPosition&& pos) const {
         if (const auto row_ptr = sheet_.find(pos.row); row_ptr != sheet_.end()) {
             if (const auto cell_ptr = row_ptr->second.find(pos.col); cell_ptr != row_ptr->second.end()) {
                 return cell_ptr->second.get();
