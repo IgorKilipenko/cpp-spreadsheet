@@ -20,22 +20,25 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         size_.rows = pos.row - size_.rows >= 0 ? pos.row + 1 : size_.rows;
         size_.cols = pos.col - size_.cols >= 0 ? pos.col + 1 : size_.cols;
 
-        auto row_it = sheet_.find(pos.row);
-        row_it = row_it != sheet_.end() ? row_it : sheet_.emplace(pos.row, ColumnItem()).first;
+        auto rows_it = sheet_.find(pos.row);
+        
+        std::unique_ptr<Cell> temp_cell;
+        const auto cells_it = rows_it != sheet_.end() ? rows_it->second.find(pos.col) : rows_it->second.end();
 
-        if (const auto cell_it = row_it->second.find(pos.col); cell_it != row_it->second.end()) {
-            if (cell_it->second->GetText() == text) {
-                return;
-            }
-            auto value = std::make_unique<Cell>(*this);
-            value->Set(std::move(text));
-            BuildGraph_(pos, value.get());
-            cell_it->second = std::move(value);
+        if (cells_it != rows_it->second.end() && cells_it->second->GetText() == text) {
+            return;
+        }
+
+        auto tmp_cell = std::make_unique<Cell>(*this);
+        tmp_cell->Set(std::move(text));
+        BuildGraph_(pos, tmp_cell.get());
+
+        rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
+
+        if (cells_it != rows_it->second.end()) {
+            cells_it->second = std::move(tmp_cell);
         } else {
-            auto value = std::make_unique<Cell>(*this);
-            value->Set(std::move(text));
-            BuildGraph_(pos, value.get());
-            row_it->second.emplace(pos.col, std::move(value));
+            rows_it->second.emplace(pos.col, std::move(tmp_cell));
         }
     }
 
