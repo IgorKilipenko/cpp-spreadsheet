@@ -9,7 +9,7 @@
 
 class Cell : public CellInterface {
 public:
-    explicit Cell(SheetInterface& sheet);
+    Cell(SheetInterface& sheet);
     ~Cell();
 
     void Set(std::string text);
@@ -20,7 +20,7 @@ public:
 
     std::vector<Position> GetReferencedCells() const override;
 
-    private: 
+private:
     bool DetectCircularDeps_(const std::vector<Position>&) const {
         return false;
     }
@@ -63,7 +63,7 @@ private:
 
     class FormulaImpl : public Impl {
     public:
-        FormulaImpl(std::string text, SheetInterface &sheet) : formula_{ParseFormula(std::move(text))}, sheet_{sheet} {}
+        FormulaImpl(std::string text, SheetInterface& sheet) : formula_{ParseFormula(std::move(text))}, sheet_{sheet} {}
         CellInterface::Value GetValue() const override {
             FormulaInterface::Value val = formula_->Evaluate(sheet_);
             if (std::holds_alternative<double>(val)) {
@@ -81,7 +81,7 @@ private:
 
     private:
         std::unique_ptr<FormulaInterface> formula_;
-        const SheetInterface &sheet_;
+        const SheetInterface& sheet_;
         std::unique_ptr<FormulaInterface::Value> cache_;
     };
 

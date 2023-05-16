@@ -7,6 +7,7 @@
 
 #include "cell.h"
 #include "common.h"
+#include "graph.h"
 
 namespace spreadsheet /* Sheet implementation public methods */ {
 
@@ -22,25 +23,27 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         row_it = row_it != sheet_.end() ? row_it : sheet_.emplace(pos.row, ColumnItem()).first;
 
         if (const auto cell_it = row_it->second.find(pos.col); cell_it != row_it->second.end()) {
-            if (cell_it->second->GetText() != text) {
-                cell_it->second->Set(std::move(text));
+            if (cell_it->second->GetText() == text) {
+                return;
             }
+            cell_it->second->Set(std::move(text));
         } else {
             auto value = std::make_unique<Cell>(*this);
             value->Set(std::move(text));
             row_it->second.emplace(pos.col, std::move(value));
-            BuildGraph_(pos);
         }
+
+        BuildGraph_(pos);
     }
 
-    const CellInterface* Sheet::GetCell(Position pos) const {
+    const Cell* Sheet::GetCell(Position pos) const {
         ValidatePosition_(pos);
-        return GetCell_(std::move(pos));
+        return GetConstCell_(std::move(pos));
     }
 
-    CellInterface* Sheet::GetCell(Position pos) {
+    Cell* Sheet::GetCell(Position pos) {
         ValidatePosition_(pos);
-        return const_cast<Cell*>(GetCell_(std::move(pos)));
+        return const_cast<Cell*>(GetConstCell_(std::move(pos)));
     }
 
     void Sheet::ClearCell(Position pos) {
@@ -133,12 +136,18 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         std::function<void(const Position&)> build;
 
         std::unordered_set<Position, graph::Hasher> visited;
+        std::unordered_set<Position, graph::Hasher> seen;
         build = [&](const Position& from) {
-            CellInterface* cell = GetCell(from);
+            seen.emplace(from);
+            const Cell* cell = GetConstCell_(from);
             const auto refs = cell->GetReferencedCells();
             std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
                 if (visited.count(from) > 0) {
                     return;
+                }
+
+                if (seen.count(to) > 0) {
+                    throw CircularDependencyException("Has circular dependency");
                 }
 
                 graph_.AddEdge({from, to});
@@ -147,6 +156,7 @@ namespace spreadsheet /* Sheet implementation private methods */ {
             visited.emplace(from);
         };
 
+        graph_.EraseVertex(position);
         build(position);
     }
 
