@@ -5,6 +5,7 @@
 #include <iterator>
 #include <memory>
 #include <variant>
+#include <vector>
 
 #include "cell.h"
 #include "common.h"
@@ -32,12 +33,20 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         auto tmp_cell = std::make_unique<Cell>(*this);
         tmp_cell->Set(std::move(text));
         const auto& cell_refs = tmp_cell->GetStoredReferencedCells();
+
+        std::vector<Position> append_positions;
+        append_positions.reserve(cell_refs.size());
         std::for_each(cell_refs.begin(), cell_refs.end(), [&](const Position& pos) {
             if (!GetCell(pos)) {
                 SetCell(pos, "");
+                append_positions.emplace_back(pos);
             }
         });
-        BuildGraph_(pos, tmp_cell.get());
+        BuildGraph_(pos, tmp_cell.get(), [&](){
+            std::for_each(std::move_iterator(append_positions.begin()),std::move_iterator(append_positions.end()), [&](Position&& pos) {
+                ClearCell(std::move(pos));
+            });
+        });
 
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
 
@@ -144,7 +153,7 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         }
     }
 
-    void Sheet::BuildGraph_(const Position& position, const Cell* cell) {
+    void Sheet::BuildGraph_(const Position& position, const Cell* cell, std::optional<std::function<void()>> on_error) {
         std::function<void(const Position&, const Cell*)> build_edges;
 
         graph::Graph::EdgeContainer edges;
@@ -160,6 +169,9 @@ namespace spreadsheet /* Sheet implementation private methods */ {
                 }
 
                 if (seen.count(to) > 0) {
+                    if (on_error.has_value()) {
+                        on_error.value()();
+                    }
                     throw CircularDependencyException("Has circular dependency");
                 }
 
