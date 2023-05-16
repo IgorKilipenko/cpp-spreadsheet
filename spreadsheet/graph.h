@@ -65,7 +65,8 @@ namespace graph {
         size_t GetEdgeCount() const;
         IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
         bool EraseEdge(const Edge& edge);
-        bool DetectCircularDeps(const VertexId& vertex_id) const;
+        bool EraseIncident(const VertexId& vertex_id);
+        // bool DetectCircularDeps(const VertexId& vertex_id) const;
 
     private:
         EdgeContainer edges_;
@@ -110,22 +111,42 @@ namespace graph {
         return ranges::AsRange(incidence_lists_.at(vertex));
     }
 
-    bool Graph::DetectCircularDeps(const VertexId& vertex_id) const {
-        /*const auto incident_edge_it = incidence_lists_.find(vertex_id);
-        if (incident_edge_it == incidence_lists_.end() || incident_edge_it->second.empty()) {
+    inline bool Graph::EraseIncident(const VertexId& vertex_id) {
+        const auto incidence_it = incidence_lists_.find(vertex_id);
+        if (incidence_it == incidence_lists_.end()) {
+            return false;
+        }
+        if (incidence_lists_.size() == 1) {
+            edges_.clear();
+        } else {
+            for (auto ptr = edges_.begin(), last = edges_.end(); ptr != last;) {
+                if (incidence_it->second.count(*ptr)) {
+                    ptr = edges_.erase(ptr);
+                } else {
+                    ++ptr;
+                }
+            }
+        }
+        incidence_lists_.erase(incidence_it);
+        return true;
+    }
+
+    // bool Graph::DetectCircularDeps(const VertexId& vertex_id) const {
+    /*const auto incident_edge_it = incidence_lists_.find(vertex_id);
+    if (incident_edge_it == incidence_lists_.end() || incident_edge_it->second.empty()) {
+        return false;
+    }
+
+    IncidenceList resolved_edges;
+    const auto resolve =[&] (const Edge& edge) {
+        if (resolved_edges.count(edge)) {
             return false;
         }
 
-        IncidenceList resolved_edges;
-        const auto resolve =[&] (const Edge& edge) {
-            if (resolved_edges.count(edge)) {
-                return false;
-            }
+        resolved_edges.emplace(edge);
 
-            resolved_edges.emplace(edge);
-            
-        };*/
+    };*/
 
-        return false;
-    }
+    // return false;
+    //}
 }
