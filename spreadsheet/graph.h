@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <iterator>
 #include <type_traits>
@@ -64,6 +65,8 @@ namespace graph {
         Graph(EdgeContainer&& edges, IncidentEdges&& incidence_lists);
 
         bool AddEdge(Edge edge);
+        template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool> = true>
+        size_t AddEdges(It begin, It end);
         bool HasEdge(const Edge& edge) const;
         size_t GetVertexCount() const;
         size_t GetEdgeCount() const;
@@ -81,13 +84,22 @@ namespace graph {
         : edges_(std::move(edges)), incidence_lists_(std::move(incidence_lists)) {}
 
     inline bool Graph::AddEdge(Edge edge) {
-        auto emplaced_edge = edges_.emplace(edge);
+        auto emplaced_edge = edges_.emplace(std::move(edge));
         if (!emplaced_edge.second) {
             return false;
         }
 
         incidence_lists_[emplaced_edge.first->from].emplace(&*emplaced_edge.first);
         return true;
+    }
+
+    template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool>>
+    size_t Graph::AddEdges(It begin, It end) {
+        size_t count = 0;
+        std::for_each(std::move_iterator(begin), std::move_iterator(end), [&](auto&& edge) {
+            count += AddEdge(std::forward<decltype(edge)>(edge)) ? 1 : 0;
+        });
+        return count;
     }
 
     inline bool Graph::HasEdge(const Edge& edge) const {

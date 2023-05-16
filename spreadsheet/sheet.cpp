@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <variant>
 
@@ -26,14 +27,16 @@ namespace spreadsheet /* Sheet implementation public methods */ {
             if (cell_it->second->GetText() == text) {
                 return;
             }
-            cell_it->second->Set(std::move(text));
+            auto value = std::make_unique<Cell>(*this);
+            value->Set(std::move(text));
+            BuildGraph_(pos, value.get());
+            cell_it->second = std::move(value);
         } else {
             auto value = std::make_unique<Cell>(*this);
             value->Set(std::move(text));
+            BuildGraph_(pos, value.get());
             row_it->second.emplace(pos.col, std::move(value));
         }
-
-        BuildGraph_(pos);
     }
 
     const Cell* Sheet::GetCell(Position pos) const {
@@ -132,14 +135,15 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         }
     }
 
-    void Sheet::BuildGraph_(const Position& position) {
-        std::function<void(const Position&)> build;
+    void Sheet::BuildGraph_(const Position& position, const Cell* cell) {
+        std::function<void(const Position&, const Cell*)> build_edges;
 
+        graph::Graph::EdgeContainer edges;
         std::unordered_set<Position, graph::Hasher> visited;
         std::unordered_set<Position, graph::Hasher> seen;
-        build = [&](const Position& from) {
+        build_edges = [&](const Position& from, const Cell* cell) {
             seen.emplace(from);
-            const Cell* cell = GetConstCell_(from);
+            // const Cell* cell = GetConstCell_(from);
             const auto refs = cell->GetReferencedCells();
             std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
                 if (visited.count(from) > 0) {
@@ -150,14 +154,15 @@ namespace spreadsheet /* Sheet implementation private methods */ {
                     throw CircularDependencyException("Has circular dependency");
                 }
 
-                graph_.AddEdge({from, to});
-                build(to);
+                edges.emplace(graph::Edge{from, to});
+                build_edges(to, GetConstCell_(to));
             });
             visited.emplace(from);
         };
 
+        build_edges(position, cell);
         graph_.EraseVertex(position);
-        build(position);
+        graph_.AddEdges(std::move_iterator(edges.begin()), std::move_iterator(edges.end()));
     }
 
     const graph::Graph& Sheet::GetGraph() const {
