@@ -156,7 +156,7 @@ namespace spreadsheet /* Sheet implementation private methods */ {
     void Sheet::BuildGraph_(const Position& position, const Cell* cell, std::optional<std::function<void()>> on_error) {
         std::function<void(const Position&, const Cell*)> build_edges;
 
-        graph::Graph::EdgeContainer edges;
+        graph::DirectedGraph::EdgeContainer edges;
         std::unordered_set<Position, graph::Hasher> visited;
         std::unordered_set<Position, graph::Hasher> seen;
         build_edges = [&](const Position& from, const Cell* cell) {
@@ -186,7 +186,7 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         graph_.AddEdges(std::move_iterator(edges.begin()), std::move_iterator(edges.end()));
     }
 
-    const graph::Graph& Sheet::GetGraph() const {
+    const graph::DirectedGraph& Sheet::GetGraph() const {
         return graph_;
     }
 }

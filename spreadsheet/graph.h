@@ -52,7 +52,7 @@ namespace graph {
         static const size_t INDEX = 42;
     };
 
-    class Graph {
+    class DirectedGraph {
     public:
         using IncidenceList = std::unordered_set<const Edge*, Hasher>;
         using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;
@@ -60,9 +60,9 @@ namespace graph {
         using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
 
     public:
-        Graph() = default;
+        DirectedGraph() = default;
 
-        Graph(EdgeContainer&& edges, IncidentEdges&& incidence_lists);
+        DirectedGraph(EdgeContainer&& edges, IncidentEdges&& incidence_lists);
 
         bool AddEdge(Edge edge);
         template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool> = true>
@@ -80,10 +80,10 @@ namespace graph {
         IncidentEdges incidence_lists_;
     };
 
-    inline Graph::Graph(EdgeContainer&& edges, IncidentEdges&& incidence_lists)
+    inline DirectedGraph::DirectedGraph(EdgeContainer&& edges, IncidentEdges&& incidence_lists)
         : edges_(std::move(edges)), incidence_lists_(std::move(incidence_lists)) {}
 
-    inline bool Graph::AddEdge(Edge edge) {
+    inline bool DirectedGraph::AddEdge(Edge edge) {
         auto emplaced_edge = edges_.emplace(std::move(edge));
         if (!emplaced_edge.second) {
             return false;
@@ -94,7 +94,7 @@ namespace graph {
     }
 
     template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool>>
-    size_t Graph::AddEdges(It begin, It end) {
+    size_t DirectedGraph::AddEdges(It begin, It end) {
         size_t count = 0;
         std::for_each(std::move_iterator(begin), std::move_iterator(end), [&](auto&& edge) {
             count += AddEdge(std::forward<decltype(edge)>(edge)) ? 1 : 0;
@@ -102,11 +102,11 @@ namespace graph {
         return count;
     }
 
-    inline bool Graph::HasEdge(const Edge& edge) const {
+    inline bool DirectedGraph::HasEdge(const Edge& edge) const {
         return edges_.count(edge) != 0;
     }
 
-    inline bool Graph::EraseEdge(const Edge& edge) {
+    inline bool DirectedGraph::EraseEdge(const Edge& edge) {
         if (!edges_.erase(edge)) {
             return false;
         }
@@ -115,19 +115,19 @@ namespace graph {
         return true;
     }
 
-    inline size_t Graph::GetVertexCount() const {
+    inline size_t DirectedGraph::GetVertexCount() const {
         return incidence_lists_.size();
     }
 
-    inline size_t Graph::GetEdgeCount() const {
+    inline size_t DirectedGraph::GetEdgeCount() const {
         return edges_.size();
     }
 
-    inline typename Graph::IncidentEdgesRange Graph::GetIncidentEdges(VertexId vertex) const {
+    inline typename DirectedGraph::IncidentEdgesRange DirectedGraph::GetIncidentEdges(VertexId vertex) const {
         return ranges::AsRange(incidence_lists_.at(vertex));
     }
 
-    inline bool Graph::EraseVertex(const VertexId& vertex_id) {
+    inline bool DirectedGraph::EraseVertex(const VertexId& vertex_id) {
         const auto incidence_it = incidence_lists_.find(vertex_id);
         if (incidence_it == incidence_lists_.end()) {
             return false;

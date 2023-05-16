@@ -403,7 +403,7 @@ namespace tests {
     void TestGraphEdges() {
         spreadsheet::Sheet raw_sheet;
         raw_sheet.SetCell("A1"_pos, "=A2+A3+A4+A5");
-        const graph::Graph& graph = raw_sheet.GetGraph();
+        const graph::DirectedGraph& graph = raw_sheet.GetGraph();
 
         ASSERT_EQUAL(graph.GetEdgeCount(), 4);
 
