@@ -8,7 +8,7 @@
 #include "cell.h"
 #include "common.h"
 
-namespace /* Sheet implementation public methods */ {
+namespace spreadsheet /* Sheet implementation public methods */ {
 
     using namespace std::literals;
 
@@ -21,15 +21,15 @@ namespace /* Sheet implementation public methods */ {
         auto row_it = sheet_.find(pos.row);
         row_it = row_it != sheet_.end() ? row_it : sheet_.emplace(pos.row, ColumnItem()).first;
 
-        if (const auto row_it = sheet_.find(pos.row); row_it != sheet_.end()) {
-            if (const auto cell_it = row_it->second.find(pos.col); cell_it != row_it->second.end()) {
+        if (const auto cell_it = row_it->second.find(pos.col); cell_it != row_it->second.end()) {
+            if (cell_it->second->GetText() != text) {
                 cell_it->second->Set(std::move(text));
-                return;
-            } else {
-                auto value = std::make_unique<Cell>(*this);
-                value->Set(std::move(text));
-                row_it->second.emplace(pos.col, std::move(value));
             }
+        } else {
+            auto value = std::make_unique<Cell>(*this);
+            value->Set(std::move(text));
+            row_it->second.emplace(pos.col, std::move(value));
+            BuildGraph_(pos);
         }
     }
 
@@ -83,7 +83,7 @@ namespace /* Sheet implementation public methods */ {
     }
 }
 
-namespace /* Sheet implementation private methods */ {
+namespace spreadsheet /* Sheet implementation private methods */ {
 
     void Sheet::Print_(std::ostream& output, std::function<void(const CellInterface*)> print_cb) const {
         for (int i = 0; i < size_.rows; ++i) {
@@ -128,8 +128,33 @@ namespace /* Sheet implementation private methods */ {
             throw InvalidPositionException("Invalid cell position");
         }
     }
+
+    void Sheet::BuildGraph_(const Position& position) {
+        std::function<void(const Position&)> build;
+
+        std::unordered_set<Position, graph::Hasher> visited;
+        build = [&](const Position& from) {
+            CellInterface* cell = GetCell(from);
+            const auto refs = cell->GetReferencedCells();
+            std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
+                if (visited.count(from) > 0) {
+                    return;
+                }
+
+                graph_.AddEdge({from, to});
+                build(to);
+            });
+            visited.emplace(from);
+        };
+
+        build(position);
+    }
+
+    const graph::Graph& Sheet::GetGraph() const {
+        return graph_;
+    }
 }
 
 std::unique_ptr<SheetInterface> CreateSheet() {
-    return std::make_unique<Sheet>();
+    return std::make_unique<spreadsheet::Sheet>();
 }
