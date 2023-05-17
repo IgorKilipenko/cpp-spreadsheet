@@ -16,6 +16,17 @@ namespace spreadsheet /* Sheet implementation public methods */ {
     using namespace std::literals;
 
     void Sheet::SetCell(Position pos, std::string text) {
+        const auto update_deps = [&](const std::vector<Position>& refs) {
+            graph_.EraseVertex(pos);
+
+            std::for_each(refs.begin(), refs.end(), [&](const Position& ref) {
+                if (!GetCell(ref)) {
+                    SetCell(ref, "");
+                }
+                graph_.AddEdge({pos, ref});
+            });
+        };
+
         ValidatePosition_(pos);
 
         size_.rows = pos.row - size_.rows >= 0 ? pos.row + 1 : size_.rows;
@@ -38,14 +49,7 @@ namespace spreadsheet /* Sheet implementation public methods */ {
             throw CircularDependencyException("Has circular dependency");
         }
 
-        graph_.EraseVertex(pos);
-
-        std::for_each(cell_refs.begin(), cell_refs.end(), [&](const Position& ref) {
-            if (!GetCell(ref)) {
-                SetCell(ref, "");
-            }
-            graph_.AddEdge({pos, ref});
-        });
+        update_deps(cell_refs);
 
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
 
@@ -150,43 +154,6 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         if (!pos.IsValid()) {
             throw InvalidPositionException("Invalid cell position");
         }
-    }
-
-    void Sheet::BuildGraph_(const Position& position, const Cell* cell, std::optional<std::function<void()>> on_error) {
-        std::function<void(const Position&, const Cell*)> build_edges;
-
-        graph::DirectedGraph::EdgeContainer edges;
-        std::unordered_set<Position, graph::Hasher> visited;
-        std::unordered_set<Position, graph::Hasher> seen;
-        build_edges = [&](const Position& from, const Cell* cell) {
-            const auto refs = cell->GetReferencedCells();
-            if (!refs.empty()) {
-                seen.emplace(from);
-                std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
-                    if (visited.count(from) > 0) {
-                        return;
-                    }
-
-                    if (position == to /*seen.count(to) > 0*/) {
-                        if (on_error.has_value()) {
-                            on_error.value()();
-                        }
-                        return;
-                        // throw CircularDependencyException("Has circular dependency");
-                    }
-
-                    edges.emplace(graph::Edge{from, to});
-                    //!------------------------------------------------
-                    // build_edges(to, GetConstCell_(to));  //! Need Remove
-                    visited.emplace(to);
-                });
-            }
-            // visited.emplace(from);
-        };
-
-        build_edges(position, cell);
-        graph_.EraseVertex(position);
-        graph_.AddEdges(std::move_iterator(edges.begin()), std::move_iterator(edges.end()));
     }
 
     const graph::DirectedGraph& Sheet::GetGraph() const {
