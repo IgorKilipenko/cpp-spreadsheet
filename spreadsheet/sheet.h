@@ -41,6 +41,7 @@ namespace spreadsheet /* Sheet definations */ {
         void ValidatePosition_(const Position& pos) const;
         void CalculateSize_(Position&& erased_pos);
         void Print_(std::ostream& output, std::function<void(const CellInterface*)> print) const;
+        void InvalidateCache_(const Position& pos);
 
     private:
         std::unordered_map<int, ColumnItem> sheet_;

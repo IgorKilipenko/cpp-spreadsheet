@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+#include <variant>
 
 #include "common.h"
 #include "graph.h"
@@ -521,6 +522,52 @@ namespace tests {
 
         ASSERT_EQUAL(sizes.str(), "(1, 1)(2, 2)(3, 3)(4, 4)(5, 5)(6, 6)");
     }
+
+    void TestInvalidateCache() {
+        {
+            spreadsheet::Sheet sheet;
+            const auto pos = "A1"_pos;
+            sheet.SetCell("A2"_pos, "5");
+            sheet.SetCell("A1"_pos, "=A2+A3");
+            Cell* cell = sheet.GetCell(pos);
+            ASSERT(std::holds_alternative<double>(cell->GetValue()));
+            ASSERT_EQUAL(std::get<double>(cell->GetValue()), 5);
+            ASSERT(cell->HasCache());
+
+            sheet.SetCell("A5"_pos, "");
+            ASSERT(cell->HasCache());
+
+            sheet.SetCell("A3"_pos, "0");
+            ASSERT(!cell->HasCache());
+            ASSERT(sheet.GetCell("A2"_pos)->HasCache());
+
+            cell->GetValue();
+            sheet.SetCell("A3"_pos, "0");
+            ASSERT(cell->HasCache());
+
+            cell->ClearCache();
+            ASSERT(!cell->HasCache());
+            ASSERT_EQUAL(std::get<double>(cell->GetValue()), 5);
+            ASSERT(cell->HasCache());
+
+            cell->Clear();
+            ASSERT(!cell->HasCache());
+        }
+        {
+            spreadsheet::Sheet sheet;
+            const auto pos = "A1"_pos;
+            sheet.SetCell("A2"_pos, "5");
+            sheet.SetCell("A1"_pos, "=A2+A3");
+            
+            Cell* cell = sheet.GetCell(pos);
+            ASSERT(std::holds_alternative<double>(cell->GetValue()));
+            ASSERT_EQUAL(std::get<double>(cell->GetValue()), 5);
+            ASSERT(cell->HasCache());
+
+            sheet.ClearCell("A2"_pos);
+            ASSERT(!cell->HasCache());
+        }
+    }
 }  // namespace
 
 void Print() {
@@ -578,6 +625,7 @@ int main() {
     RUN_TEST(tr, tests::TestCellCircularReferences2);
     RUN_TEST(tr, tests::TestGraph);
     RUN_TEST(tr, tests::TestSetPrint);
+    RUN_TEST(tr, tests::TestInvalidateCache);
 
     // Print();
 

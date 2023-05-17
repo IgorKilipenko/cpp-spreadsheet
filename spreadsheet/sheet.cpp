@@ -16,7 +16,8 @@ namespace spreadsheet /* Sheet implementation public methods */ {
     using namespace std::literals;
 
     void Sheet::SetCell(Position pos, std::string text) {
-        const auto update_deps = [&](const std::vector<Position>& refs) {
+        const auto prepare_graph = [&](const std::vector<Position>& refs) {
+            InvalidateCache_(pos);
             graph_.EraseVertex(pos);
 
             std::for_each(refs.begin(), refs.end(), [&](const Position& ref) {
@@ -50,7 +51,7 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         }
 
         /// Build graph (and empty cells if needed)
-        update_deps(cell_refs);
+        prepare_graph(cell_refs);
 
         /// Append created cell to sheet
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
@@ -84,6 +85,7 @@ namespace spreadsheet /* Sheet implementation public methods */ {
             return;
         }
 
+        InvalidateCache_(pos);
         graph_.EraseVertex(pos);
         CalculateSize_(std::move(pos));
     }
@@ -109,6 +111,16 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         Print_(output, [&output](const CellInterface* cell) {
             output << cell->GetText();
         });
+    }
+
+    void Sheet::InvalidateCache_(const Position& pos) {
+        graph_.Traversal(pos, [&](const graph::Edge* edge) -> bool {
+            Cell* cell = GetCell(edge->to);
+            assert(cell != nullptr);
+
+            cell->ClearCache();
+            return false;   /// Continue traversal
+        }, graph::DependencyGraph::Direction::backward);
     }
 }
 
