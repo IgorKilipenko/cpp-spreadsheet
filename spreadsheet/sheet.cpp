@@ -42,8 +42,8 @@ namespace spreadsheet /* Sheet implementation public methods */ {
                 append_positions.emplace_back(pos);
             }
         });
-        BuildGraph_(pos, tmp_cell.get(), [&](){
-            std::for_each(std::move_iterator(append_positions.begin()),std::move_iterator(append_positions.end()), [&](Position&& pos) {
+        BuildGraph_(pos, tmp_cell.get(), [&]() {
+            std::for_each(std::move_iterator(append_positions.begin()), std::move_iterator(append_positions.end()), [&](Position&& pos) {
                 ClearCell(std::move(pos));
             });
         });
@@ -160,25 +160,28 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         std::unordered_set<Position, graph::Hasher> visited;
         std::unordered_set<Position, graph::Hasher> seen;
         build_edges = [&](const Position& from, const Cell* cell) {
-            seen.emplace(from);
-            // const Cell* cell = GetConstCell_(from);
             const auto refs = cell->GetReferencedCells();
-            std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
-                if (visited.count(from) > 0) {
-                    return;
-                }
-
-                if (seen.count(to) > 0) {
-                    if (on_error.has_value()) {
-                        on_error.value()();
+            if (!refs.empty()) {
+                seen.emplace(from);
+                std::for_each(refs.begin(), refs.end(), [&](const Position& to) {
+                    if (visited.count(from) > 0) {
+                        return;
                     }
-                    throw CircularDependencyException("Has circular dependency");
-                }
 
-                edges.emplace(graph::Edge{from, to});
-                build_edges(to, GetConstCell_(to));
-            });
-            visited.emplace(from);
+                    if (position == to /*seen.count(to) > 0*/) {
+                        if (on_error.has_value()) {
+                            on_error.value()();
+                        }
+                        throw CircularDependencyException("Has circular dependency");
+                    }
+
+                    edges.emplace(graph::Edge{from, to});
+                    //!------------------------------------------------
+                    build_edges(to, GetConstCell_(to));  //! Need Remove
+                    visited.emplace(to);
+                });
+            }
+            // visited.emplace(from);
         };
 
         build_edges(position, cell);
