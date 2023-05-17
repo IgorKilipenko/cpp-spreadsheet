@@ -42,6 +42,11 @@ namespace spreadsheet /* Sheet implementation public methods */ {
                 append_positions.emplace_back(pos);
             }
         });
+
+        if (graph_.DetectCircularDependency(pos, cell_refs)) {
+            throw CircularDependencyException("Has circular dependency");
+        }
+
         BuildGraph_(pos, tmp_cell.get(), [&]() {
             std::for_each(std::move_iterator(append_positions.begin()), std::move_iterator(append_positions.end()), [&](Position&& pos) {
                 ClearCell(std::move(pos));
@@ -172,7 +177,8 @@ namespace spreadsheet /* Sheet implementation private methods */ {
                         if (on_error.has_value()) {
                             on_error.value()();
                         }
-                        throw CircularDependencyException("Has circular dependency");
+                        return;
+                        //throw CircularDependencyException("Has circular dependency");
                     }
 
                     edges.emplace(graph::Edge{from, to});
