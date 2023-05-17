@@ -29,18 +29,18 @@ namespace spreadsheet /* Sheet implementation public methods */ {
 
         ValidatePosition_(pos);
 
+        /// Resize sheet
         size_.rows = pos.row - size_.rows >= 0 ? pos.row + 1 : size_.rows;
         size_.cols = pos.col - size_.cols >= 0 ? pos.col + 1 : size_.cols;
 
+        /// Check cell with this position and value already exists
         auto rows_it = sheet_.find(pos.row);
-
-        std::unique_ptr<Cell> temp_cell;
         const auto cells_it = rows_it != sheet_.end() ? rows_it->second.find(pos.col) : rows_it->second.end();
-
         if (cells_it != rows_it->second.end() && cells_it->second->GetText() == text) {
             return;
         }
 
+        /// Create temp cell object
         auto tmp_cell = std::make_unique<Cell>(*this);
         tmp_cell->Set(std::move(text));
         const auto& cell_refs = tmp_cell->GetStoredReferencedCells();
@@ -49,10 +49,11 @@ namespace spreadsheet /* Sheet implementation public methods */ {
             throw CircularDependencyException("Has circular dependency");
         }
 
+        /// Build graph (and empty cells if needed)
         update_deps(cell_refs);
 
+        /// Append created cell to sheet
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
-
         if (cells_it != rows_it->second.end()) {
             cells_it->second = std::move(tmp_cell);
         } else {
@@ -83,6 +84,7 @@ namespace spreadsheet /* Sheet implementation public methods */ {
             return;
         }
 
+        graph_.EraseVertex(pos);
         CalculateSize_(std::move(pos));
     }
 
@@ -127,24 +129,24 @@ namespace spreadsheet /* Sheet implementation private methods */ {
     }
 
     void Sheet::CalculateSize_(Position&& erased_pos) {
-        const bool erasedGraterRowIndex = size_.rows - erased_pos.row == 1;
-        const bool erasedGraterColIndex = size_.cols - erased_pos.col == 1;
-        if (!erasedGraterRowIndex && !erasedGraterColIndex) {
+        const bool grater_row_idx = size_.rows - erased_pos.row == 1;
+        const bool grater_col_idx = size_.cols - erased_pos.col == 1;
+        if (!grater_row_idx && !grater_col_idx) {
             return;
         }
 
         Size new_size{-1, -1};
-        std::for_each(sheet_.begin(), sheet_.end(), [&new_size, erasedGraterColIndex](const auto& row) {
+        std::for_each(sheet_.begin(), sheet_.end(), [&new_size, grater_col_idx](const auto& row) {
             new_size.rows = std::max(new_size.rows, row.first);
-            new_size.cols = !erasedGraterColIndex ? new_size.cols
-                                                  : std::max(
-                                                        std::max_element(
-                                                            row.second.begin(), row.second.end(),
-                                                            [](const auto& lhs, const auto& rhs) {
-                                                                return lhs.first < rhs.first;
-                                                            })
-                                                            ->first,
-                                                        new_size.cols);
+            new_size.cols = !grater_col_idx ? new_size.cols
+                                            : std::max(
+                                                  std::max_element(
+                                                      row.second.begin(), row.second.end(),
+                                                      [](const auto& lhs, const auto& rhs) {
+                                                          return lhs.first < rhs.first;
+                                                      })
+                                                      ->first,
+                                                  new_size.cols);
         });
 
         size_ = {new_size.rows + 1, new_size.cols + 1};
