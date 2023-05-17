@@ -400,24 +400,28 @@ namespace tests {
         ASSERT_EQUAL(sheet->GetCell("B1"_pos)->GetReferencedCells(), std::vector{"C3"_pos});
     }
 
-    void TestGraphEdges() {
+    void TestGraph() {
         spreadsheet::Sheet raw_sheet;
         raw_sheet.SetCell("A1"_pos, "=A2+A3+A4+A5");
-        const graph::DirectedGraph& graph = raw_sheet.GetGraph();
-
+        const graph::DependencyGraph& graph = raw_sheet.GetGraph();
         ASSERT_EQUAL(graph.GetEdgeCount(), 4);
+        ASSERT_EQUAL(graph.GetVertexCount(), 1);
 
         raw_sheet.SetCell("A1"_pos, "=A2+A3+A4");
         ASSERT_EQUAL(graph.GetEdgeCount(), 3);
+        ASSERT_EQUAL(graph.GetVertexCount(), 1);
 
         raw_sheet.SetCell("B1"_pos, "=A4");
         ASSERT_EQUAL(graph.GetEdgeCount(), 4);
+        ASSERT_EQUAL(graph.GetVertexCount(), 2);
 
         raw_sheet.SetCell("B2"_pos, "=A1");
         ASSERT_EQUAL(graph.GetEdgeCount(), 5);
+        ASSERT_EQUAL(graph.GetVertexCount(), 3);
 
         raw_sheet.SetCell("A1"_pos, "=A2+A3+A4+A5");
         ASSERT_EQUAL(graph.GetEdgeCount(), 6);
+        ASSERT_EQUAL(graph.GetVertexCount(), 3);
     }
 
     void TestFormulaIncorrect() {
@@ -456,27 +460,55 @@ namespace tests {
     }
 
     void TestCellCircularReferences2() {
-        auto sheet = CreateSheet();
-        sheet->SetCell("A1"_pos, "=A2");
+        {
+            auto sheet = CreateSheet();
 
-        bool caught = false;
-        try {
-            sheet->SetCell("A2"_pos, "=A1");
-        } catch (const CircularDependencyException&) {
-            caught = true;
+            bool caught = false;
+            try {
+                sheet->SetCell("A1"_pos, "=A1");
+            } catch (const CircularDependencyException&) {
+                caught = true;
+            }
+            ASSERT(caught);
         }
+        {
+            auto sheet = CreateSheet();
+            sheet->SetCell("A1"_pos, "=A2");
 
-        ASSERT(caught);
-        // ASSERT_EQUAL(sheet->GetCell("M6"_pos)->GetText(), "Ready");
+            bool caught = false;
+            try {
+                sheet->SetCell("A2"_pos, "=A1");
+            } catch (const CircularDependencyException&) {
+                caught = true;
+            }
+            ASSERT(caught);
 
-        sheet->SetCell("A2"_pos, "=A3");
-        caught = false;
-        try {
-            sheet->SetCell("A3"_pos, "=A1");
-        } catch (const CircularDependencyException&) {
-            caught = true;
+            sheet->SetCell("A2"_pos, "=A3");
+            caught = false;
+            try {
+                sheet->SetCell("A3"_pos, "=A1");
+            } catch (const CircularDependencyException&) {
+                caught = true;
+            }
+            ASSERT(caught);
         }
-        ASSERT(caught);
+        {
+            auto sheet = CreateSheet();
+            sheet->SetCell("A1"_pos, "=A2+A3");
+            sheet->SetCell("A2"_pos, "=C1+C2");
+            sheet->SetCell("A5"_pos, "=C1+C2");
+            sheet->SetCell("B1"_pos, "=A2+A3+B3");
+            sheet->SetCell("B2"_pos, "=A2+A3+B3");
+            sheet->SetCell("B10"_pos, "=B2+A1");
+
+            bool caught = false;
+            try {
+                sheet->SetCell("A2"_pos, "=B1");
+            } catch (const CircularDependencyException&) {
+                caught = true;
+            }
+            ASSERT(caught);
+        }
     }
 
     void TestSetPrint() {
@@ -544,7 +576,7 @@ int main() {
     RUN_TEST(tr, tests::TestFormulaIncorrect);
     RUN_TEST(tr, tests::TestCellCircularReferences);
     RUN_TEST(tr, tests::TestCellCircularReferences2);
-    RUN_TEST(tr, tests::TestGraphEdges);
+    RUN_TEST(tr, tests::TestGraph);
     RUN_TEST(tr, tests::TestSetPrint);
 
     // Print();
