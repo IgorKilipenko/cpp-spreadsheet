@@ -7,14 +7,17 @@
 #include <optional>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "common.h"
 
 Cell::Cell(SheetInterface& sheet) : impl_(std::make_unique<EmptyImpl>()), sheet_{sheet} {}
 
-Cell::~Cell() {}
+Cell::~Cell() = default;
 
 void Cell::Set(std::string text) {
+    ClearCache();
+    
     if (text.empty()) {
         impl_ = std::make_unique<EmptyImpl>();
         cell_refs_ = {};
@@ -28,14 +31,23 @@ void Cell::Set(std::string text) {
 }
 
 void Cell::Clear() {
+    cache_ = nullptr;
     impl_ = nullptr;
 }
 
 Cell::Value Cell::GetValue() const {
-    return impl_->GetValue();
+    assert(impl_ != nullptr);
+
+    if (!HasCache()) {
+        cache_ = std::make_unique<Value>(impl_->GetValue());
+    }
+
+    return *cache_;
 }
 
 std::string Cell::GetText() const {
+    assert(impl_ != nullptr);
+
     return impl_->GetText();
 }
 
@@ -45,4 +57,12 @@ std::vector<Position> Cell::GetReferencedCells() const {
 
 const std::vector<Position>& Cell::GetStoredReferencedCells() const {
     return cell_refs_;
+}
+
+void Cell::ClearCache() {
+    cache_ = nullptr;
+}
+
+bool Cell::HasCache() const {
+    return cache_ != nullptr;
 }

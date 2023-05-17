@@ -22,6 +22,9 @@ public:
     std::vector<Position> GetReferencedCells() const override;
     const std::vector<Position>& GetStoredReferencedCells() const;
 
+    void ClearCache();
+    bool HasCache() const;  /// For testing purposes
+
 private:
     bool DetectCircularDeps_(const std::vector<Position>&) const {
         return false;
@@ -84,11 +87,11 @@ private:
     private:
         std::unique_ptr<FormulaInterface> formula_;
         const SheetInterface& sheet_;
-        std::unique_ptr<FormulaInterface::Value> cache_;
     };
 
 private:
     std::unique_ptr<Impl> impl_;
     SheetInterface& sheet_;
     std::vector<Position> cell_refs_;
+    mutable std::unique_ptr<Value> cache_;
 };
