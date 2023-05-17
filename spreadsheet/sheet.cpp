@@ -158,7 +158,7 @@ namespace spreadsheet /* Sheet implementation private methods */ {
         }
     }
 
-    const graph::DirectedGraph& Sheet::GetGraph() const {
+    const graph::Graph& Sheet::GetGraph() const {
         return graph_;
     }
 }

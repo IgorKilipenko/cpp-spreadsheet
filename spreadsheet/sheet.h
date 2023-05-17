@@ -33,7 +33,7 @@ namespace spreadsheet /* Sheet definations */ {
         void PrintValues(std::ostream& output) const override;
         void PrintTexts(std::ostream& output) const override;
 
-        const graph::DirectedGraph& GetGraph() const;
+        const graph::Graph& GetGraph() const;
 
     private:
         template <typename TPosition, std::enable_if_t<std::is_same_v<std::decay_t<TPosition>, Position>, bool> = true>
@@ -45,7 +45,7 @@ namespace spreadsheet /* Sheet definations */ {
     private:
         std::unordered_map<int, ColumnItem> sheet_;
         Size size_ = {0, 0};
-        graph::DirectedGraph graph_;
+        graph::Graph graph_;
     };
 }
 

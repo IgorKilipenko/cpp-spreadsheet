@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <functional>
@@ -52,36 +53,62 @@ namespace graph {
         std::hash<const void*> pointer_hasher_;
         static const size_t INDEX = 42;
     };
+
+    using IncidenceList = std::unordered_set<const Edge*, Hasher>;
+    using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;
+    using EdgeContainer = std::unordered_set<Edge, Hasher>;
+    using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
+}
+
+namespace graph /* IGraph implementation */ {
+    class IGraph {
+    public:
+        virtual bool AddEdge(Edge edge) = 0;
+        virtual bool HasEdge(const Edge& edge) const = 0;
+        virtual size_t GetVertexCount() const = 0;
+        virtual size_t GetEdgeCount() const = 0;
+        virtual IncidentEdgesRange GetIncidentEdges(VertexId vertex) const = 0;
+        virtual bool EraseEdge(const Edge& edge) = 0;
+        virtual bool EraseVertex(const VertexId& vertex_id) = 0;
+        virtual void Traverse(const VertexId& vertex_id, std::function<bool(const Edge*)> visit) = 0;
+        virtual bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) = 0;
+
+    protected:
+        virtual size_t AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) = 0;
+    };
 }
 
 namespace graph /* DirectedGraph */ {
-    class DirectedGraph {
-    public:
-        using IncidenceList = std::unordered_set<const Edge*, Hasher>;
-        using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;
-        using EdgeContainer = std::unordered_set<Edge, Hasher>;
-        using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
+
+    class Graph;
+
+    class DirectedGraph : IGraph {
+        friend Graph;
 
     public:
         DirectedGraph() = default;
+        ~DirectedGraph() = default;
 
         DirectedGraph(EdgeContainer&& edges, IncidentEdges&& incidence_lists);
 
-        virtual bool AddEdge(Edge edge);
+        bool AddEdge(Edge edge) override;
         template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool> = true>
         size_t AddEdges(It begin, It end);
-        bool HasEdge(const Edge& edge) const;
-        size_t GetVertexCount() const;
-        size_t GetEdgeCount() const;
-        IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
-        virtual bool EraseEdge(const Edge& edge);
-        virtual bool EraseVertex(const VertexId& vertex_id);
-        void Traverse(const VertexId& vertex_id, std::function<bool(const Edge*)> visit);
-        bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs);
+        bool HasEdge(const Edge& edge) const override;
+        size_t GetVertexCount() const override;
+        size_t GetEdgeCount() const override;
+        IncidentEdgesRange GetIncidentEdges(VertexId vertex) const override;
+        virtual bool EraseEdge(const Edge& edge) override;
+        virtual bool EraseVertex(const VertexId& vertex_id) override;
+        void Traverse(const VertexId& vertex_id, std::function<bool(const Edge*)> visit) override;
+        bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) override;
 
     protected:
         EdgeContainer edges_;
         IncidentEdges incidence_lists_;
+
+    protected:
+        size_t AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) override;
     };
 }
 
@@ -109,6 +136,10 @@ namespace graph /* DirectedGraph implementation */ {
         return count;
     }
 
+    inline size_t DirectedGraph::AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) {
+        return AddEdges(std::move_iterator(begin), std::move_iterator(end));
+    }
+
     inline bool DirectedGraph::HasEdge(const Edge& edge) const {
         return edges_.count(edge) != 0;
     }
@@ -130,7 +161,7 @@ namespace graph /* DirectedGraph implementation */ {
         return edges_.size();
     }
 
-    inline typename DirectedGraph::IncidentEdgesRange DirectedGraph::GetIncidentEdges(VertexId vertex) const {
+    inline IncidentEdgesRange DirectedGraph::GetIncidentEdges(VertexId vertex) const {
         return ranges::AsRange(incidence_lists_.at(vertex));
     }
 
@@ -211,33 +242,70 @@ namespace graph /* DirectedGraph implementation */ {
 }
 
 namespace graph /* Graph */ {
-    class Graph final : public DirectedGraph {
+
+    class Graph final : IGraph {
     public:
         Graph() = default;
+        Graph(DirectedGraph forward_graph, DirectedGraph backward_graph)
+            : forward_graph_(std::move(forward_graph)), backward_graph_(std::move(backward_graph)) {}
         ~Graph() = default;
 
     public:
         bool AddEdge(Edge edge) override;
+        template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool> = true>
+        size_t AddEdges(It begin, It end);
         bool EraseEdge(const Edge& edge) override;
         bool EraseVertex(const VertexId& vertex_id) override;
+        bool HasEdge(const Edge& edge) const override;
+        size_t GetVertexCount() const override;
+        size_t GetEdgeCount() const override;
+        IncidentEdgesRange GetIncidentEdges(VertexId vertex) const override;
+        void Traverse(const VertexId& vertex_id, std::function<bool(const Edge*)> visit) override;
+        bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) override;
 
     private:
+        DirectedGraph forward_graph_;
         DirectedGraph backward_graph_;
+
+    private:
+        size_t AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) override;
     };
 }
 
 namespace graph /* Graph implementation */ {
 
     inline bool Graph::AddEdge(Edge edge) {
-        const bool success = DirectedGraph::AddEdge(edge);
+        const bool success = forward_graph_.AddEdge(edge);
         if (success) {
             backward_graph_.AddEdge(Edge{edge.to, edge.from});
         }
         return success;
     }
 
+    template <typename It, std::enable_if_t<std::is_same_v<typename std::iterator_traits<It>::value_type, Edge>, bool>>
+    size_t Graph::AddEdges(It begin, It end) {
+        const size_t count = forward_graph_.AddEdges(begin, end);
+        if (count == 0) {
+            return count;
+        }
+
+        std::vector<Edge> tmp(count);
+        std::transform(std::move_iterator(begin), std::move_iterator(end), tmp.rbegin(), [](auto&& edge) {
+            return Edge{edge.to, edge.from};
+        });
+
+        [[maybe_unused]] const size_t back_count = backward_graph_.AddEdges(std::move_iterator(tmp.begin()), std::move_iterator(tmp.end()));
+        assert(back_count == count);
+
+        return count;
+    }
+
+    inline size_t Graph::AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) {
+        return AddEdges(std::move(begin), std::move(end));
+    }
+
     inline bool Graph::EraseEdge(const Edge& edge) {
-        const bool success = DirectedGraph::EraseEdge(edge);
+        const bool success = forward_graph_.EraseEdge(edge);
         if (success) {
             backward_graph_.EraseEdge(Edge{edge.to, edge.from});
         }
@@ -245,26 +313,44 @@ namespace graph /* Graph implementation */ {
     }
 
     inline bool Graph::EraseVertex(const VertexId& vertex_id) {
-        const auto erased_forward_edges_it = incidence_lists_.find(vertex_id);
-        if (erased_forward_edges_it == incidence_lists_.end()) {
+        const auto erased_forward_edges_it = forward_graph_.incidence_lists_.find(vertex_id);
+        if (erased_forward_edges_it == forward_graph_.incidence_lists_.end()) {
             return false;
         }
-
-        /*
-        std::vector<Edge> erased_backward_edges(erased_forward_edges_it->second.size());
-        std::transform(
-            erased_forward_edges_it->second.begin(), erased_forward_edges_it->second.end(), erased_backward_edges.begin(), [](const Edge* edge) {
-                return Edge{edge->to, edge->from};
-            });
-        */
 
         std::for_each(
             erased_forward_edges_it->second.begin(), erased_forward_edges_it->second.end(), [&backward_graph = backward_graph_](const Edge* edge) {
                 backward_graph.EraseEdge(Edge{edge->to, edge->from});
             });
 
-        DirectedGraph::EraseVertex(vertex_id);
+        forward_graph_.EraseVertex(vertex_id);
 
         return true;
+    }
+
+    inline bool Graph::HasEdge(const Edge& edge) const {
+        return forward_graph_.HasEdge(edge) || backward_graph_.HasEdge(edge);
+    }
+
+    inline size_t Graph::GetVertexCount() const {
+        // assert(forward_graph_.GetVertexCount() == backward_graph_.GetVertexCount());
+        return forward_graph_.GetVertexCount();
+    }
+
+    inline size_t Graph::GetEdgeCount() const {
+        assert(forward_graph_.GetEdgeCount() == backward_graph_.GetEdgeCount());
+        return forward_graph_.GetEdgeCount();
+    }
+
+    inline IncidentEdgesRange Graph::GetIncidentEdges(VertexId vertex) const {
+        return forward_graph_.GetIncidentEdges(std::move(vertex));
+    }
+
+    inline void Graph::Traverse(const VertexId& vertex_id, std::function<bool(const Edge*)> visit) {
+        forward_graph_.Traverse(vertex_id, visit);
+    }
+
+    inline bool Graph::DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) {
+        return forward_graph_.DetectCircularDependency(from, to_refs);
     }
 }
