@@ -188,7 +188,7 @@ namespace graph /* DirectedGraph implementation */ {
 
     inline bool DirectedGraph::DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) {
         return std::any_of(to_refs.begin(), to_refs.end(), [&](const VertexId& ref) {
-            if (ref == from) {
+            if (from == ref) {
                 return true;
             }
 

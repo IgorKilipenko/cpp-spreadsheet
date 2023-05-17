@@ -34,23 +34,17 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         tmp_cell->Set(std::move(text));
         const auto& cell_refs = tmp_cell->GetStoredReferencedCells();
 
-        std::vector<Position> append_positions;
-        append_positions.reserve(cell_refs.size());
-        std::for_each(cell_refs.begin(), cell_refs.end(), [&](const Position& pos) {
-            if (!GetCell(pos)) {
-                SetCell(pos, "");
-                append_positions.emplace_back(pos);
-            }
-        });
-
         if (graph_.DetectCircularDependency(pos, cell_refs)) {
             throw CircularDependencyException("Has circular dependency");
         }
 
-        BuildGraph_(pos, tmp_cell.get(), [&]() {
-            std::for_each(std::move_iterator(append_positions.begin()), std::move_iterator(append_positions.end()), [&](Position&& pos) {
-                ClearCell(std::move(pos));
-            });
+        graph_.EraseVertex(pos);
+
+        std::for_each(cell_refs.begin(), cell_refs.end(), [&](const Position& ref) {
+            if (!GetCell(ref)) {
+                SetCell(ref, "");
+            }
+            graph_.AddEdge({pos, ref});
         });
 
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
@@ -178,12 +172,12 @@ namespace spreadsheet /* Sheet implementation private methods */ {
                             on_error.value()();
                         }
                         return;
-                        //throw CircularDependencyException("Has circular dependency");
+                        // throw CircularDependencyException("Has circular dependency");
                     }
 
                     edges.emplace(graph::Edge{from, to});
                     //!------------------------------------------------
-                    build_edges(to, GetConstCell_(to));  //! Need Remove
+                    // build_edges(to, GetConstCell_(to));  //! Need Remove
                     visited.emplace(to);
                 });
             }
