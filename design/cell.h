@@ -23,7 +23,7 @@ public:
     const std::vector<Position>& GetStoredReferencedCells() const;
 
     void ClearCache();
-    bool HasCache() const;  /// For testing purposes
+    bool HasCache() const;
 
 private:
     bool DetectCircularDeps_(const std::vector<Position>&) const {
