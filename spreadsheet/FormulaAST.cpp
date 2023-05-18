@@ -443,13 +443,16 @@ double FormulaAST::Execute(LookupValue lookup_value) const {
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
-    : root_expr_(std::move(root_expr))
-    , cells_(std::move(cells)) {
+    : root_expr_(std::move(root_expr)), cells_(std::move(cells)) {
     cells_.sort();  // to avoid sorting in GetReferencedCells
 }
 
 FormulaAST::~FormulaAST() = default;
 
 const std::forward_list<Position>& FormulaAST::GetCells() const {
+    return cells_;
+}
+
+std::forward_list<Position>& FormulaAST::GetCells() {
     return cells_;
 }

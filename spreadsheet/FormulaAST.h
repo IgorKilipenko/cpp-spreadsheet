@@ -30,6 +30,7 @@ public:
     void Print(std::ostream& out) const;
     void PrintFormula(std::ostream& out) const;
     void PrintCells(std::ostream& out) const;
+    std::forward_list<Position>& GetCells();
     const std::forward_list<Position>& GetCells() const;
 
 private:
