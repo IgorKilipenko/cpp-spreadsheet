@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <map>
 #include <set>
@@ -8,20 +10,20 @@
 #include <vector>
 
 namespace TestRunnerPrivate {
-template <typename K, typename V, template <typename, typename> class Map>
-std::ostream& PrintMap(std::ostream& os, const Map<K, V>& m) {
-    os << "{";
-    bool first = true;
-    for (const auto& kv : m) {
-        if (!first) {
-            os << ", ";
+    template <typename K, typename V, template <typename, typename> class Map>
+    std::ostream& PrintMap(std::ostream& os, const Map<K, V>& m) {
+        os << "{";
+        bool first = true;
+        for (const auto& kv : m) {
+            if (!first) {
+                os << ", ";
+            }
+            first = false;
+            os << kv.first << ": " << kv.second;
         }
-        first = false;
-        os << kv.first << ": " << kv.second;
+        return os << "}";
     }
-    return os << "}";
 }
-}  // namespace TestRunnerPrivate
 
 template <class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& s) {

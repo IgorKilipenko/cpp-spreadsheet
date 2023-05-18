@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+build
+bin
+dist
+
+#.vscode/settings.*
+.cache
+
+**/antlr4_runtime/demo
