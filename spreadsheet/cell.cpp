@@ -17,7 +17,7 @@ Cell::~Cell() = default;
 
 void Cell::Set(std::string text) {
     ClearCache();
-    
+
     if (text.empty()) {
         impl_ = std::make_unique<EmptyImpl>();
         cell_refs_ = {};
@@ -65,4 +65,8 @@ void Cell::ClearCache() {
 
 bool Cell::HasCache() const {
     return cache_ != nullptr;
+}
+
+bool Cell::IsReferenced() const {
+    return !cell_refs_.empty();
 }

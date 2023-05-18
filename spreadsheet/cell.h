@@ -24,6 +24,7 @@ public:
 
     void ClearCache();
     bool HasCache() const;  /// For testing purposes
+    bool IsReferenced() const;
 
 private:
     bool DetectCircularDeps_(const std::vector<Position>&) const {
