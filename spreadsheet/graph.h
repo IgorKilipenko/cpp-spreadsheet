@@ -60,7 +60,7 @@ namespace graph {
     using IncidentEdges = std::unordered_map<VertexId, IncidenceList, Hasher>;
 }
 
-namespace graph /* IGraph implementation */ {
+namespace graph /* IGraph */ {
     class IGraph {
     public:
         virtual bool AddEdge(Edge edge) = 0;
@@ -241,7 +241,7 @@ namespace graph /* DirectedGraph implementation */ {
     }
 }
 
-namespace graph /* Graph */ {
+namespace graph /* Graph DependencyGraph */ {
 
     class DependencyGraph final : IGraph {
     public:
