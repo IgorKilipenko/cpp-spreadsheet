@@ -443,24 +443,23 @@ namespace tests {
     }
 
     void TestCellCircularReferences() {
-        auto sheet = CreateSheet();
-        sheet->SetCell("E2"_pos, "=E4");
-        sheet->SetCell("E4"_pos, "=X9");
-        sheet->SetCell("X9"_pos, "=M6");
-        sheet->SetCell("M6"_pos, "Ready");
+        {
+            auto sheet = CreateSheet();
+            sheet->SetCell("E2"_pos, "=E4");
+            sheet->SetCell("E4"_pos, "=X9");
+            sheet->SetCell("X9"_pos, "=M6");
+            sheet->SetCell("M6"_pos, "Ready");
 
-        bool caught = false;
-        try {
-            sheet->SetCell("M6"_pos, "=E2");
-        } catch (const CircularDependencyException&) {
-            caught = true;
+            bool caught = false;
+            try {
+                sheet->SetCell("M6"_pos, "=E2");
+            } catch (const CircularDependencyException&) {
+                caught = true;
+            }
+
+            ASSERT(caught);
+            ASSERT_EQUAL(sheet->GetCell("M6"_pos)->GetText(), "Ready");
         }
-
-        ASSERT(caught);
-        ASSERT_EQUAL(sheet->GetCell("M6"_pos)->GetText(), "Ready");
-    }
-
-    void TestCellCircularReferences2() {
         {
             auto sheet = CreateSheet();
 
@@ -570,30 +569,6 @@ namespace tests {
     }
 }  // namespace
 
-void Print() {
-    auto sheet = CreateSheet();
-
-    sheet->SetCell("A1"_pos, "A1");
-    sheet->SetCell("A2"_pos, "A2");
-    sheet->SetCell("A3"_pos, "A3");
-
-    sheet->SetCell("B1"_pos, "B1");
-    sheet->SetCell("B2"_pos, "B2");
-    sheet->SetCell("B3"_pos, "B3");
-
-    sheet->SetCell("C1"_pos, "C1");
-    sheet->SetCell("C2"_pos, "C2");
-    sheet->SetCell("C3"_pos, "C3");
-
-    std::cout << std::endl;
-    std::cout << "Table (Text)" << std::endl;
-    sheet->PrintTexts(std::cout);
-
-    std::cout << std::endl;
-    std::cout << "Table (Values)" << std::endl;
-    sheet->PrintValues(std::cout);
-}
-
 int main() {
     TestRunner tr;
     RUN_TEST(tr, TestEmpty);
@@ -622,12 +597,9 @@ int main() {
     RUN_TEST(tr, tests::TestCellReferences);
     RUN_TEST(tr, tests::TestFormulaIncorrect);
     RUN_TEST(tr, tests::TestCellCircularReferences);
-    RUN_TEST(tr, tests::TestCellCircularReferences2);
     RUN_TEST(tr, tests::TestGraph);
     RUN_TEST(tr, tests::TestSetPrint);
     RUN_TEST(tr, tests::TestInvalidateCache);
-
-    // Print();
 
     return 0;
 }
