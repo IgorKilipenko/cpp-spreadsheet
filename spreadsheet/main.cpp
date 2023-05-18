@@ -558,7 +558,7 @@ namespace tests {
             const auto pos = "A1"_pos;
             sheet.SetCell("A2"_pos, "5");
             sheet.SetCell("A1"_pos, "=A2+A3");
-            
+
             Cell* cell = sheet.GetCell(pos);
             ASSERT(std::holds_alternative<double>(cell->GetValue()));
             ASSERT_EQUAL(std::get<double>(cell->GetValue()), 5);
