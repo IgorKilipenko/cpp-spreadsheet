@@ -16,11 +16,11 @@ namespace spreadsheet /* Sheet implementation public methods */ {
     using namespace std::literals;
 
     void Sheet::SetCell(Position pos, std::string text) {
-        const auto prepare_graph = [&](const std::vector<Position>& refs) {
+        const auto prepare_graph = [&](std::vector<Position>&& refs) {
             InvalidateCache_(pos);
             graph_.EraseVertex(pos);
 
-            std::for_each(refs.begin(), refs.end(), [&](const Position& ref) {
+            std::for_each(std::move_iterator(refs.begin()), std::move_iterator(refs.end()), [&](const Position& ref) {
                 if (!GetCell(ref)) {
                     SetCell(ref, "");
                 }
@@ -44,14 +44,14 @@ namespace spreadsheet /* Sheet implementation public methods */ {
         /// Create temp cell object
         auto tmp_cell = std::make_unique<Cell>(*this);
         tmp_cell->Set(std::move(text));
-        const auto& cell_refs = tmp_cell->GetStoredReferencedCells();
+        auto cell_refs = tmp_cell->GetReferencedCells();
 
         if (graph_.DetectCircularDependency(pos, cell_refs)) {
             throw CircularDependencyException("Has circular dependency");
         }
 
         /// Build graph (and empty cells if needed)
-        prepare_graph(cell_refs);
+        prepare_graph(std::move(cell_refs));
 
         /// Append created cell to sheet
         rows_it = rows_it != sheet_.end() ? rows_it : sheet_.emplace(pos.row, ColumnItem()).first;
@@ -114,13 +114,16 @@ namespace spreadsheet /* Sheet implementation public methods */ {
     }
 
     void Sheet::InvalidateCache_(const Position& pos) {
-        graph_.Traversal(pos, [&](const graph::Edge* edge) -> bool {
-            Cell* cell = GetCell(edge->to);
-            assert(cell != nullptr);
+        graph_.Traversal(
+            pos,
+            [&](const graph::Edge* edge) -> bool {
+                Cell* cell = GetCell(edge->to);
+                assert(cell != nullptr);
 
-            cell->ClearCache();
-            return false;   /// Continue traversal
-        }, graph::DependencyGraph::Direction::backward);
+                cell->ClearCache();
+                return false;  /// Continue traversal
+            },
+            graph::DependencyGraph::Direction::backward);
     }
 }
 

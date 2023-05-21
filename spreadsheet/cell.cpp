@@ -20,10 +20,8 @@ void Cell::Set(std::string text) {
 
     if (text.empty()) {
         impl_ = std::make_unique<EmptyImpl>();
-        cell_refs_ = {};
     } else if (text.length() > 1 && text[0] == '=') {
         std::unique_ptr<FormulaImpl> impl_temp = std::make_unique<FormulaImpl>(std::move(text.erase(0, 1)), sheet_);
-        cell_refs_ = impl_temp->GetReferencedCells();
         impl_ = std::move(impl_temp);
     } else {
         impl_ = std::make_unique<TextImpl>(std::move(text));
@@ -52,11 +50,8 @@ std::string Cell::GetText() const {
 }
 
 std::vector<Position> Cell::GetReferencedCells() const {
-    return cell_refs_;
-}
-
-const std::vector<Position>& Cell::GetStoredReferencedCells() const {
-    return cell_refs_;
+    assert(impl_ != nullptr);
+    return impl_->GetReferencedCells();
 }
 
 void Cell::ClearCache() {
@@ -65,8 +60,4 @@ void Cell::ClearCache() {
 
 bool Cell::HasCache() const {
     return cache_ != nullptr;
-}
-
-bool Cell::IsReferenced() const {
-    return !cell_refs_.empty();
 }

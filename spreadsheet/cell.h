@@ -20,11 +20,9 @@ public:
     std::string GetText() const override;
 
     std::vector<Position> GetReferencedCells() const override;
-    const std::vector<Position>& GetStoredReferencedCells() const;
 
     void ClearCache();
     bool HasCache() const;
-    bool IsReferenced() const;
 
 private:
     class Impl {
@@ -88,6 +86,5 @@ private:
 private:
     std::unique_ptr<Impl> impl_;
     SheetInterface& sheet_;
-    std::vector<Position> cell_refs_;
     mutable std::unique_ptr<Value> cache_;
 };
