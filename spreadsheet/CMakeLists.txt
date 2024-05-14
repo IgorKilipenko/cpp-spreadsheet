@@ -1,40 +1,37 @@
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22)
 project(spreadsheet)
 
 set(CMAKE_CXX_STANDARD 17)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /JMC")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
 endif()
 
-# Add CMake module path
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# Add the download_antlr.cmake script
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/download_antlr.cmake)
 
 find_package(Java REQUIRED)
-find_package(ANTLR REQUIRED)
 
-add_definitions(
-    -DANTLR4CPP_STATIC
-    -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-)
+ExternalProject_Get_Property(antlr INSTALL_DIR)
 
-# Set the path to ANTLR4 runtime
-set(ANTLR4_RUNTIME_DIR /usr/local/src/antlr4/runtime/Cpp)
+set(ANTLR_EXECUTABLE ${INSTALL_DIR}/antlr-4.13.1-complete.jar)
 
-# Set the directory properties
-set(WITH_STATIC_CRT OFF CACHE BOOL "Visual C++ static CRT for ANTLR" FORCE)
+# Macro to generate ANTLR files
+macro(antlr_target NAME INPUT_FILE)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.h
+        COMMAND ${Java_JAVA_EXECUTABLE} -jar ${ANTLR_EXECUTABLE} -Dlanguage=Cpp -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${INPUT_FILE}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${INPUT_FILE}
+        COMMENT "Running ANTLR on ${INPUT_FILE}"
+    )
+    add_custom_target(${NAME}_antlr DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.h)
+endmacro()
 
-# Add the ANTLR4 runtime directory
-add_subdirectory(${ANTLR4_RUNTIME_DIR} ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime)
+antlr_target(FormulaParser Formula.g4)
 
-antlr_target(FormulaParser ${CMAKE_CURRENT_SOURCE_DIR}/Formula.g4 LEXER PARSER LISTENER)
-
-include_directories(
-    ${ANTLR4_INCLUDE_DIR}
-    ${ANTLR_FormulaParser_OUTPUT_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/antlr4_runtime/runtime/src
-)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 file(GLOB sources
     *.cpp
@@ -47,7 +44,6 @@ list(FILTER sources_lib EXCLUDE REGEX ".*main\\.cpp$")
 
 add_library(
     libspreadsheet
-    ${ANTLR_FormulaParser_CXX_OUTPUTS}
     ${sources_lib}
 )
 
@@ -56,17 +52,6 @@ add_executable(
     main.cpp
 )
 
-target_link_libraries(libspreadsheet antlr4_static)
-if(MSVC)
-    target_compile_options(antlr4_static PRIVATE /W0)
-endif()
+add_dependencies(spreadsheet FormulaParser_antlr)
 
 target_link_libraries(spreadsheet PRIVATE libspreadsheet)
-
-install(
-    TARGETS spreadsheet
-    DESTINATION bin
-    EXPORT libspreadsheet
-)
-
-set_directory_properties(PROPERTIES VS_STARTUP_PROJECT spreadsheet)
