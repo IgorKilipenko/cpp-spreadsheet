@@ -9,17 +9,35 @@ if [ "${CLANG_VERSION}" = "none" ]; then
     exit 0
 fi
 
-set +e
-
 # Remove installed Clang
-apt-get -y purge --auto-remove clang
+echo "Removing existing Clang installation..."
+apt-get -y purge --auto-remove clang && apt-get autoremove -y && apt-get clean -y
+rm -rf /var/lib/apt/lists/*
+echo "Clang removal completed."
 
 # Install LLVM
-wget https://apt.llvm.org/llvm.sh -P /tmp
+echo "Downloading and installing LLVM ${CLANG_VERSION}..."
+wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh
 chmod +x /tmp/llvm.sh
 /tmp/llvm.sh ${CLANG_VERSION} all
 rm -f /tmp/llvm.sh
+echo "LLVM installation completed."
 
-update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} 100
-update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 100
-update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-${CLANG_VERSION} 100
+# Update alternatives for clang, clang++, and clangd
+update_alternatives() {
+    local tool=$1
+    local version=$2
+    if [ -f /usr/bin/${tool}-${version} ]; then
+        update-alternatives --install /usr/bin/${tool} ${tool} /usr/bin/${tool}-${version} 100
+        echo "${tool}-${version} set as default."
+    else
+        echo "${tool}-${version} not found, skipping."
+    fi
+}
+
+echo "Updating alternatives for clang, clang++, and clangd..."
+update_alternatives "clang" ${CLANG_VERSION}
+update_alternatives "clang++" ${CLANG_VERSION}
+update_alternatives "clangd" ${CLANG_VERSION}
+
+echo "Clang ${CLANG_VERSION} installation and configuration completed."
