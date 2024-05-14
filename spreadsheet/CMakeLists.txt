@@ -3,32 +3,34 @@ project(spreadsheet)
 
 set(CMAKE_CXX_STANDARD 17)
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set(
-        CMAKE_CXX_FLAGS_DEBUG
-        "${CMAKE_CXX_FLAGS_DEBUG} /JMC"
-    )
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /JMC")
 else()
-    set(
-        CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough"
-    )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
 endif()
 
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/antlr-4.12.0-complete.jar)
-include(${CMAKE_CURRENT_SOURCE_DIR}/FindANTLR.cmake)
+# Set the path to ANTLR4 runtime
+set(ANTLR4_RUNTIME_DIR /usr/local/src/antlr4/runtime/Cpp)
+
+# Add CMake module path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_package(ANTLR REQUIRED)
 
 add_definitions(
     -DANTLR4CPP_STATIC
     -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 )
 
+# Set the directory properties
 set(WITH_STATIC_CRT OFF CACHE BOOL "Visual C++ static CRT for ANTLR" FORCE)
-add_subdirectory(antlr4_runtime)
 
-antlr_target(FormulaParser Formula.g4 LEXER PARSER LISTENER)
+# Add the ANTLR4 runtime directory
+add_subdirectory(${ANTLR4_RUNTIME_DIR} ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime)
+
+antlr_target(FormulaParser ${CMAKE_CURRENT_SOURCE_DIR}/Formula.g4 LEXER PARSER LISTENER)
 
 include_directories(
-    ${ANTLR4_INCLUDE_DIRS}
+    ${ANTLR4_INCLUDE_DIR}
     ${ANTLR_FormulaParser_OUTPUT_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/antlr4_runtime/runtime/src
 )
