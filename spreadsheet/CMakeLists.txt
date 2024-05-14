@@ -8,18 +8,19 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
 endif()
 
-# Set the path to ANTLR4 runtime
-set(ANTLR4_RUNTIME_DIR /usr/local/src/antlr4/runtime/Cpp)
-
 # Add CMake module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+find_package(Java REQUIRED)
 find_package(ANTLR REQUIRED)
 
 add_definitions(
     -DANTLR4CPP_STATIC
     -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 )
+
+# Set the path to ANTLR4 runtime
+set(ANTLR4_RUNTIME_DIR /usr/local/src/antlr4/runtime/Cpp)
 
 # Set the directory properties
 set(WITH_STATIC_CRT OFF CACHE BOOL "Visual C++ static CRT for ANTLR" FORCE)

@@ -1,25 +1,22 @@
-# FindANTLR.cmake
-# CMake module to find ANTLR
-
-find_package(Java QUIET COMPONENTS Runtime)
+find_package(Java REQUIRED COMPONENTS Runtime)
 
 if(NOT ANTLR_EXECUTABLE)
   find_program(ANTLR_EXECUTABLE
-               NAMES antlr.jar antlr4.jar antlr-4.jar antlr-4.13.1-complete.jar
+               NAMES antlr-4.13.1-complete.jar
                HINTS /usr/local/lib/antlr-4.13.1-complete.jar)
 endif()
 
 if(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
   execute_process(
-      COMMAND ${Java_JAVA_EXECUTABLE} -jar ${ANTLR_EXECUTABLE}
+      COMMAND ${Java_JAVA_EXECUTABLE} -jar ${ANTLR_EXECUTABLE} -version
       OUTPUT_VARIABLE ANTLR_COMMAND_OUTPUT
       ERROR_VARIABLE ANTLR_COMMAND_ERROR
       RESULT_VARIABLE ANTLR_COMMAND_RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   if(ANTLR_COMMAND_RESULT EQUAL 0)
-    string(REGEX MATCH "Version [0-9]+(\\.[0-9]+)*" ANTLR_VERSION ${ANTLR_COMMAND_OUTPUT})
-    string(REPLACE "Version " "" ANTLR_VERSION ${ANTLR_VERSION})
+    string(REGEX MATCH "ANTLR Version [0-9]+(\\.[0-9]+)*" ANTLR_VERSION ${ANTLR_COMMAND_OUTPUT})
+    string(REPLACE "ANTLR Version " "" ANTLR_VERSION ${ANTLR_VERSION})
   else()
     message(
         SEND_ERROR
@@ -27,14 +24,14 @@ if(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
         "failed with the output '${ANTLR_COMMAND_ERROR}'")
   endif()
 
-  macro(ANTLR_TARGET Name InputFile)
-    set(ANTLR_OPTIONS LEXER PARSER LISTENER VISITOR)
-    set(ANTLR_ONE_VALUE_ARGS PACKAGE OUTPUT_DIRECTORY DEPENDS_ANTLR)
-    set(ANTLR_MULTI_VALUE_ARGS COMPILE_FLAGS DEPENDS)
+  macro(antlr_target Name InputFile)
+    set(options LEXER PARSER LISTENER VISITOR)
+    set(oneValueArgs PACKAGE OUTPUT_DIRECTORY DEPENDS_ANTLR)
+    set(multiValueArgs COMPILE_FLAGS DEPENDS)
     cmake_parse_arguments(ANTLR_TARGET
-                          "${ANTLR_OPTIONS}"
-                          "${ANTLR_ONE_VALUE_ARGS}"
-                          "${ANTLR_MULTI_VALUE_ARGS}"
+                          "${options}"
+                          "${oneValueArgs}"
+                          "${multiValueArgs}"
                           ${ARGN})
 
     set(ANTLR_${Name}_INPUT ${InputFile})
@@ -117,7 +114,7 @@ if(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
                 ${ANTLR_TARGET_DEPENDS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Building ${Name} with ANTLR ${ANTLR_VERSION}")
-  endmacro(ANTLR_TARGET)
+  endmacro(antlr_target)
 
 endif(ANTLR_EXECUTABLE AND Java_JAVA_EXECUTABLE)
 
