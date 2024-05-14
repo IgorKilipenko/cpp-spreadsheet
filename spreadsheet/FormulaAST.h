@@ -5,7 +5,6 @@
 #include <optional>
 #include <stdexcept>
 
-#include "FormulaLexer.h"
 #include "common.h"
 
 namespace ASTImpl {
