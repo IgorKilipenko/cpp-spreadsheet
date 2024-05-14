@@ -33,7 +33,7 @@ macro(antlr_target NAME INPUT_FILE)
 endmacro()
 
 # Generate ANTLR files for FormulaParser
-antlr_target(FormulaParser Formula.g4)
+antlr_target(FormulaParser antlr/grammar/Formula.g4)
 
 # Include generated files directory
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -49,6 +49,9 @@ list(FILTER sources EXCLUDE REGEX ".*main\\.cpp$")
 
 # Create library target
 add_library(libspreadsheet ${sources})
+
+# Add include directory containing 'FormulaBaseListener.h'
+target_include_directories(libspreadsheet PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Create executable target
 add_executable(spreadsheet main.cpp)
