@@ -1,6 +1,6 @@
 {
     "cmake.configureSettings": {
-        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_BUILD_TYPE": "Debug"
     },
     "[cpp]": {
         "editor.suggestSelection": "recentlyUsedByPrefix",
@@ -13,5 +13,6 @@
     "cSpell.words": [
         "antlr",
         "apostroph"
-    ]
+    ],
+    "cmake.options.statusBarVisibility": "compact"
 }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(spreadsheet)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(
         CMAKE_CXX_FLAGS_DEBUG
@@ -38,21 +38,32 @@ file(GLOB sources
     *.h
 )
 
-add_executable(
-    spreadsheet
+set(sources_lib ${sources})
+
+list(FILTER sources_lib EXCLUDE REGEX ".*main\\.cpp$")
+
+add_library(
+    libspreadsheet
     ${ANTLR_FormulaParser_CXX_OUTPUTS}
-    ${sources}
+    ${sources_lib}
 )
 
-target_link_libraries(spreadsheet antlr4_static)
+add_executable(
+    spreadsheet
+    main.cpp
+)
+
+target_link_libraries(libspreadsheet antlr4_static)
 if(MSVC)
     target_compile_options(antlr4_static PRIVATE /W0)
 endif()
 
+target_link_libraries(spreadsheet PRIVATE libspreadsheet)
+
 install(
     TARGETS spreadsheet
     DESTINATION bin
-    EXPORT spreadsheet
+    EXPORT libspreadsheet
 )
 
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT spreadsheet)
