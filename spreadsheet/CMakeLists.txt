@@ -9,13 +9,16 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
 endif()
 
-# Add the download_antlr.cmake script
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/download_antlr.cmake)
+# Include the download_antlr.cmake script
+include(cmake/download_antlr.cmake)
 
+# Find Java
 find_package(Java REQUIRED)
 
+# Get the installation directory of ANTLR
 ExternalProject_Get_Property(antlr INSTALL_DIR)
 
+# Set the path to the ANTLR executable
 set(ANTLR_EXECUTABLE ${INSTALL_DIR}/antlr-4.13.1-complete.jar)
 
 # Macro to generate ANTLR files
@@ -29,29 +32,29 @@ macro(antlr_target NAME INPUT_FILE)
     add_custom_target(${NAME}_antlr DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.h)
 endmacro()
 
+# Generate ANTLR files for FormulaParser
 antlr_target(FormulaParser Formula.g4)
 
+# Include generated files directory
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB sources
-    *.cpp
-    *.h
+# Add all source files
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
 )
 
-set(sources_lib ${sources})
+# Exclude main.cpp from sources
+list(FILTER sources EXCLUDE REGEX ".*main\\.cpp$")
 
-list(FILTER sources_lib EXCLUDE REGEX ".*main\\.cpp$")
+# Create library target
+add_library(libspreadsheet ${sources})
 
-add_library(
-    libspreadsheet
-    ${sources_lib}
-)
+# Create executable target
+add_executable(spreadsheet main.cpp)
 
-add_executable(
-    spreadsheet
-    main.cpp
-)
-
+# Add dependencies
 add_dependencies(spreadsheet FormulaParser_antlr)
 
+# Link libraries
 target_link_libraries(spreadsheet PRIVATE libspreadsheet)
