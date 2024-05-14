@@ -36,8 +36,6 @@ ARG ANTLR_RUNTIME=${ANTLR_SRC}/antlr4/runtime/Cpp
 
 # Add ANTLR4 JAR file
 ADD https://www.antlr.org/download/antlr-4.13.1-complete.jar /tmp/antlr-4.13.1-complete.jar
-
-# Install ANTLR4
 RUN cp /tmp/antlr-4.13.1-complete.jar ${LIBS_DIR}/antlr-4.13.1-complete.jar && \
     rm /tmp/antlr-4.13.1-complete.jar
 
