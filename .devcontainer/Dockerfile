@@ -29,24 +29,3 @@ RUN if [ "${REINSTALL_CLANG_VERSION_FROM_SOURCE}" != "none" ]; then \
         chmod +x /tmp/reinstall-clang.sh && /tmp/reinstall-clang.sh ${REINSTALL_CLANG_VERSION_FROM_SOURCE}; \
     fi \
     && rm -f /tmp/reinstall-clang.sh
-
-ARG LIBS_DIR=/usr/local/lib
-ARG ANTLR_SRC=/usr/local/src
-ARG ANTLR_RUNTIME=${ANTLR_SRC}/antlr4/runtime/Cpp
-
-# Add ANTLR4 JAR file
-ADD https://www.antlr.org/download/antlr-4.13.1-complete.jar /tmp/antlr-4.13.1-complete.jar
-RUN cp /tmp/antlr-4.13.1-complete.jar ${LIBS_DIR}/antlr-4.13.1-complete.jar && \
-    rm /tmp/antlr-4.13.1-complete.jar
-
-# Download and build C++ ANTLR4 runtime
-RUN git clone https://github.com/antlr/antlr4.git ${ANTLR_SRC}/antlr4
-RUN mkdir ${ANTLR_RUNTIME}/build && \
-    cd ${ANTLR_RUNTIME}/build && \
-    cmake .. && \
-    make && \
-    make install
-
-# Set environment variables
-ENV CLASSPATH=".:${LIBS_DIR}/antlr-4.13.1-complete.jar:$CLASSPATH"
-ENV PATH="${ANTLR_RUNTIME}/build/bin:$PATH"
