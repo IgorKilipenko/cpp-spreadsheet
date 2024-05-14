@@ -50,14 +50,11 @@ list(FILTER sources EXCLUDE REGEX ".*main\\.cpp$")
 # Create library target
 add_library(libspreadsheet ${sources})
 
-# Add include directory containing 'FormulaBaseListener.h'
-target_include_directories(libspreadsheet PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+# Add dependencies
+add_dependencies(libspreadsheet FormulaParser_antlr)
 
 # Create executable target
 add_executable(spreadsheet main.cpp)
-
-# Add dependencies
-add_dependencies(spreadsheet FormulaParser_antlr)
 
 # Link libraries
 target_link_libraries(spreadsheet PRIVATE libspreadsheet)
