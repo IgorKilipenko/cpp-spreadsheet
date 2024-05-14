@@ -28,7 +28,7 @@ FetchContent_MakeAvailable(antlr)
 include(${antlr_SOURCE_DIR}/runtime/Cpp/cmake/FindANTLR.cmake)
 
 # Generate ANTLR files for FormulaParser
-antlr_target(FormulaParser Formula.g4 LEXER PARSER LISTENER)
+antlr_target(FormulaParser ${CMAKE_CURRENT_SOURCE_DIR}/antlr/grammar/Formula.g4 LEXER PARSER LISTENER)
 
 # Include directories for ANTLR
 include_directories(${antlr_SOURCE_DIR}/runtime/Cpp/src)
