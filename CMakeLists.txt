@@ -1,11 +1,33 @@
 cmake_minimum_required(VERSION 3.24)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+project(spreadsheet)
 
-project(cpp-spreadsheet-app VERSION 1.1.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /JMC")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
+endif()
 
-# Add subdirectory with the library
-add_subdirectory(spreadsheet)
+# Source directiory
+set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+# Find Java
+find_package(Java REQUIRED)
+
+# Include the ANTLR setup
+include(cmake/SetupAntlr.cmake)
+
+# Include the source files and create targets
+include(cmake/SetupTargets.cmake)
+
+# Install target for spreadsheet
+install(
+    TARGETS spreadsheet
+    DESTINATION bin
+    EXPORT libspreadsheet
+)
+
+set_directory_properties(PROPERTIES VS_STARTUP_PROJECT spreadsheet)

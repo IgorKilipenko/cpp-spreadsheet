@@ -24,6 +24,25 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Debug App",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/spreadsheet",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "cmake: build",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }
