@@ -1,0 +1,8 @@
+CompileFlags:
+  CompilationDatabase: "${workspaceFolder}/build"
+
+Diagnostics:
+  ClangTidy:
+    Add: modernize*
+    Remove: modernize-use-trailing-return-type
+  UnusedIncludes: Strict
