@@ -5,17 +5,12 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS
     "${PROJECT_SRC_DIR}/*.cpp"
 )
 
-# Collect headre files
-file(GLOB_RECURSE headers CONFIGURE_DEPENDS
-    "${PROJECT_SRC_DIR}/*.h"
-)
-
 # Exclude main.cpp from sources
 list(FILTER sources EXCLUDE REGEX "${PROJECT_SRC_DIR}/main\\.cpp$")
 
 # Create the library
 add_library(libspreadsheet ${ANTLR_FormulaParser_CXX_OUTPUTS} ${sources})
-target_link_libraries(libspreadsheet antlr4_static)
+target_link_libraries(libspreadsheet PRIVATE antlr4_static)
 
 # Specify the include directories
 target_include_directories(libspreadsheet PUBLIC
@@ -27,32 +22,37 @@ target_include_directories(libspreadsheet PUBLIC
 )
 
 # Specify the public headers
-set_target_properties(libspreadsheet PROPERTIES
-    PUBLIC_HEADER "${PROJECT_PUBLIC_INCLUDE_DIR}/spreadsheet.h"
-)
+#set_target_properties(libspreadsheet PROPERTIES
+#    PUBLIC_HEADER "${PROJECT_PUBLIC_INCLUDE_DIR}/spreadsheet.h"
+#)
 
-install(
-    FILES
-    "${PROJECT_SRC_DIR}/common.h"
-    "${PROJECT_SRC_DIR}/graph.h"
-    "${PROJECT_SRC_DIR}/sheet.h"
-    DESTINATION include/src
-)
+#install(
+#    FILES
+#    "${BINARY_PUBLIC_INCLUDE_DIR}/spreadsheet.h"
+#    DESTINATION include
+#)
+
+#install(
+#    DIRECTORY
+#    "${PROJECT_PUBLIC_INCLUDE_DIR}"
+#    DESTINATION include
+#)
 
 # Installation rules
-install(TARGETS libspreadsheet antlr4_static
-    EXPORT libspreadsheet-targets
+install(
+    TARGETS libspreadsheet #antlr4_static
+    #EXPORT libspreadsheet-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
     PUBLIC_HEADER DESTINATION include
 )
 
-install(
-    EXPORT libspreadsheet-targets
-    FILE libspreadsheet-config.cmake
-    DESTINATION lib/cmake/libspreadsheet
-)
+#install(
+#    EXPORT libspreadsheet-targets
+#    FILE libspreadsheet-config.cmake
+#    DESTINATION lib/cmake/libspreadsheet
+#)
 
 # Create executable target
 add_executable(spreadsheet ${PROJECT_SRC_DIR}/main.cpp)
