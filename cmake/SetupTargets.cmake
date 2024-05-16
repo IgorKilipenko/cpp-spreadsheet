@@ -3,6 +3,10 @@
 # Add all source files
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS
     "${PROJECT_SRC_DIR}/*.cpp"
+)
+
+# Collect headre files
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS
     "${PROJECT_SRC_DIR}/*.h"
 )
 
