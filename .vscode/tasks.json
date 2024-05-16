@@ -45,6 +45,23 @@
                 "${workspaceFolder}/build/*"
             ],
             "group": "none"
+        },
+        {
+            "label": "install libspreadsheet",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--config", "${input:buildType}",
+                "--target", "install"
+            ],
+            "dependsOn": "cmake: build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Install libspreadsheet"
         }
     ],
     "inputs": [
