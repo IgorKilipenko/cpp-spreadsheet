@@ -1,4 +1,4 @@
-# SetupTargets.cmake - This file handles the creation of targets and linking
+message(STATUS "-------------INSTALL SETTING------------")
 
 # Add all source files except main.cpp
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS
@@ -12,6 +12,7 @@ file(GLOB_RECURSE public_headers CONFIGURE_DEPENDS
 )
 file(GLOB_RECURSE private_headers CONFIGURE_DEPENDS
     "${PROJECT_PUBLIC_INCLUDE_DIR}/*.h"
+    "${PROJECT_SRC_DIR}/*.h"
 )
 list(REMOVE_ITEM private_headers ${public_headers})
 
@@ -20,10 +21,12 @@ add_library(libspreadsheet ${sources} ${private_headers} ${ANTLR_FormulaParser_C
 target_link_libraries(libspreadsheet PRIVATE antlr4_static)
 set_target_properties(libspreadsheet PROPERTIES
     PUBLIC_HEADER "${public_headers}"
+    PREFIX ""
 )
 
 # Specify the include directories
-target_include_directories(libspreadsheet PUBLIC
+target_include_directories(libspreadsheet
+    INTERFACE
     $<BUILD_INTERFACE:${PROJECT_PUBLIC_INCLUDE_DIR}/spreadsheet>
     $<INSTALL_INTERFACE:include/spreadsheet>
     PRIVATE
@@ -33,12 +36,17 @@ target_include_directories(libspreadsheet PUBLIC
 )
 
 # Installation rules for the library
-install(TARGETS libspreadsheet
-    EXPORT libspreadsheet_targets
+install(TARGETS libspreadsheet antlr4_static
+    EXPORT libspreadsheet_Targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
     PUBLIC_HEADER DESTINATION include/spreadsheet
+)
+install(EXPORT libspreadsheet_Targets
+    FILE libspreadsheet-config.cmake
+    DESTINATION lib/cmake/libspreadsheet
+    NAMESPACE libspreadsheet::
 )
 install(
     FILES
@@ -51,7 +59,11 @@ add_executable(spreadsheet ${PROJECT_SRC_DIR}/main.cpp)
 add_dependencies(spreadsheet libspreadsheet)
 target_link_libraries(spreadsheet PRIVATE libspreadsheet)
 
-# Installation rules for the executable
-install(TARGETS spreadsheet
+# Install target for spreadsheet
+install(
+    TARGETS spreadsheet
     DESTINATION app
+    # EXPORT spreadsheet_Targets
 )
+
+message(STATUS "--------------------------------------------")

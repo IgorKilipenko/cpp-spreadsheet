@@ -2,8 +2,10 @@
 
 set(ANTLR_TAG 4.13.1)
 set(ANTLR4_WITH_STATIC_CRT OFF)
-set(ANTLR_BUILD_SHARED ON)
+set(ANTLR_BUILD_SHARED OFF)
 set(ANTLR_BUILD_CPP_TESTS OFF)
+
+message(STATUS "DOWNLOAD ANTLR4 JAR v" ${ANTLR_TAG})
 
 # Define the path to the ANTLR JAR file and download it if it does not exist
 set(ANTLR_EXECUTABLE "${CMAKE_BINARY_DIR}/antlr/antlr-${ANTLR_TAG}-complete.jar")
@@ -15,6 +17,8 @@ if (NOT EXISTS "${ANTLR_EXECUTABLE}")
     )
 endif()
 
+message(STATUS "FETCH ANTLR4 CPP")
+
 # Use FetchContent to download and make available the ANTLR C++ runtime
 include(FetchContent)
 FetchContent_Declare(
@@ -25,6 +29,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(antlr)
 
+message(STATUS "ANTLR SOURCE DIR: " ${antlr_SOURCE_DIR})
+
 include(${antlr_SOURCE_DIR}/runtime/Cpp/cmake/FindANTLR.cmake)
 
 # Generate ANTLR files for FormulaParser
@@ -32,3 +38,5 @@ antlr_target(FormulaParser "${PROJECT_SRC_DIR}/antlr/grammar/Formula.g4" LEXER P
 
 # Include directories for ANTLR
 include_directories("${antlr_SOURCE_DIR}/runtime/Cpp/src")
+
+message(STATUS "ANTLR RUNTIME DIR: " ${antlr_SOURCE_DIR}/runtime/Cpp/src)
