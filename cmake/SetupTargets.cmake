@@ -16,7 +16,7 @@ file(GLOB_RECURSE private_headers CONFIGURE_DEPENDS
 list(REMOVE_ITEM private_headers ${public_headers})
 
 # Create the library
-add_library(libspreadsheet ${sources} ${ANTLR_FormulaParser_CXX_OUTPUTS})
+add_library(libspreadsheet ${sources} ${private_headers} ${ANTLR_FormulaParser_CXX_OUTPUTS})
 target_link_libraries(libspreadsheet PRIVATE antlr4_static)
 set_target_properties(libspreadsheet PROPERTIES
     PUBLIC_HEADER "${public_headers}"
