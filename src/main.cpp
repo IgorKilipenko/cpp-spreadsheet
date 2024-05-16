@@ -2,10 +2,8 @@
 #include <limits>
 #include <variant>
 
-#include "common.h"
-#include "graph.h"
-#include "sheet.h"
-#include "test_runner_p.h"
+#include "spreadsheet.h"
+#include "test_utils/test_runner_p.h"
 
 inline std::ostream& operator<<(std::ostream& output, Position pos) {
     return output << "(" << pos.row << ", " << pos.col << ")";
