@@ -14,7 +14,8 @@
 
 namespace ASTImpl {
 
-    enum ExprPrecedence {
+    // Перечисление для обозначения операций
+    enum ExpressionPrecedence {
         EP_ADD,
         EP_SUB,
         EP_MUL,
@@ -24,7 +25,7 @@ namespace ASTImpl {
         EP_END,
     };
 
-    // a bit is set when the parentheses are needed
+    // Правила приоритетов для расстановки скобок
     enum PrecedenceRule {
         PR_NONE = 0b00,                // never needed
         PR_LEFT = 0b01,                // needed for a left child
@@ -32,54 +33,59 @@ namespace ASTImpl {
         PR_BOTH = PR_LEFT | PR_RIGHT,  // needed for both children
     };
 
-    // PRECEDENCE_RULES[parent][child] determines if parentheses need
-    // to be inserted between a parent and a child of specific precedences;
-    // for some nodes rules are different for left and right children:
-    // (X c Y) p Z  vs  X p (Y c Z)
-    //
-    // The interesting cases are the ones where removing the parens would change the AST.
-    // It may happen when our precedence rules for parentheses are different from
-    // the grammatic precedence of operations.
-    //
-    // Case analysis:
-    // A + (B + C) - always okay (nothing of lower grammatic precedence could have been written to the
-    // right)
-    //    (e.g. if we had A + (B + C) / D, it wouldn't parse in a way
-    //    that woudld have given us A + (B + C) as a subexpression to deal with)
-    // A + (B - C) - always okay (nothing of lower grammatic precedence could have been written to the
-    // right) A - (B + C) - never okay A - (B - C) - never okay A * (B * C) - always okay (the parent
-    // has the highest grammatic precedence) A * (B / C) - always okay (the parent has the highest
-    // grammatic precedence) A / (B * C) - never okay A / (B / C) - never okay
-    // -(A + B) - never okay
-    // -(A - B) - never okay
-    // -(A * B) - always okay (the resulting binary op has the highest grammatic precedence)
-    // -(A / B) - always okay (the resulting binary op has the highest grammatic precedence)
-    // +(A + B) - **sometimes okay** (e.g. parens in +(A + B) / C are **not** optional)
-    //     (currently in the table we're always putting in the parentheses)
-    // +(A - B) - **sometimes okay** (same)
-    //     (currently in the table we're always putting in the parentheses)
-    // +(A * B) - always okay (the resulting binary op has the highest grammatic precedence)
-    // +(A / B) - always okay (the resulting binary op has the highest grammatic precedence)
-    constexpr PrecedenceRule PRECEDENCE_RULES[EP_END][EP_END] = {
-        /* EP_ADD */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-        /* EP_SUB */ {PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-        /* EP_MUL */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-        /* EP_DIV */ {PR_BOTH, PR_BOTH, PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE},
-        /* EP_UNARY */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-        /* EP_ATOM */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-    };
+    /**
+     * @brief Defines the rules for inserting parentheses based on the precedence of parent and child expressions.
+     *
+     * The `PRECEDENCE_RULES` table is used to determine if parentheses need to be inserted between a parent
+     * and a child of specific precedences. For some nodes, the rules are different for left and right children:
+     * (X c Y) p Z  vs  X p (Y c Z).
+     *
+     * The interesting cases are those where removing the parentheses would change the Abstract Syntax Tree (AST).
+     * This can occur when the precedence rules for parentheses differ from the grammatical precedence of operations.
+     *
+     * Case analysis:
+     * - `A + (B + C)` - Always okay. Nothing of lower grammatical precedence could have been written to the right.
+     *   - Example: If we had `A + (B + C) / D`, it wouldn't parse in a way that would have given us `A + (B + C)` as a subexpression to deal with.
+     * - `A + (B - C)` - Always okay. Nothing of lower grammatical precedence could have been written to the right.
+     * - `A - (B + C)` - Never okay.
+     * - `A - (B - C)` - Never okay.
+     * - `A * (B * C)` - Always okay. The parent has the highest grammatical precedence.
+     * - `A * (B / C)` - Always okay. The parent has the highest grammatical precedence.
+     * - `A / (B * C)` - Never okay.
+     * - `A / (B / C)` - Never okay.
+     * - `-(A + B)` - Never okay.
+     * - `-(A - B)` - Never okay.
+     * - `-(A * B)` - Always okay. The resulting binary operation has the highest grammatical precedence.
+     * - `-(A / B)` - Always okay. The resulting binary operation has the highest grammatical precedence.
+     * - `+(A + B)` - **Sometimes okay**. For example, parentheses in `+(A + B) / C` are **not** optional.
+     *   - Currently in the table, parentheses are always inserted.
+     * - `+(A - B)` - **Sometimes okay**. Same as above.
+     *   - Currently in the table, parentheses are always inserted.
+     * - `+(A * B)` - Always okay. The resulting binary operation has the highest grammatical precedence.
+     * - `+(A / B)` - Always okay. The resulting binary operation has the highest grammatical precedence.
+     *
+     * @note The `PRECEDENCE_RULES` table is a 2D array where `PRECEDENCE_RULES[parent][child]` gives the rule for
+     *       whether to insert parentheses between a parent and a child of specific precedences.
+     */
+    constexpr std::array<std::array<PrecedenceRule, EP_END>, EP_END> PRECEDENCE_RULES = {
+        {/* EP_ADD */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+         /* EP_SUB */ {PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+         /* EP_MUL */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+         /* EP_DIV */ {PR_BOTH, PR_BOTH, PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE},
+         /* EP_UNARY */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+         /* EP_ATOM */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE}}};
 
     class Expr {
     public:
         virtual ~Expr() = default;
         virtual void Print(std::ostream& out) const = 0;
-        virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-        virtual double Evaluate(LookupValue lookup_value) const = 0;
+        virtual void DoPrintFormula(std::ostream& out, ExpressionPrecedence precedence) const = 0;
+        [[nodiscard]] virtual double Evaluate(LookupValue lookup_value) const = 0;
 
         // higher is tighter
-        virtual ExprPrecedence GetPrecedence() const = 0;
+        [[nodiscard]] virtual ExpressionPrecedence GetPrecedence() const = 0;
 
-        void PrintFormula(std::ostream& out, ExprPrecedence parent_precedence, bool right_child = false) const {
+        void PrintFormula(std::ostream& out, ExpressionPrecedence parent_precedence, bool right_child = false) const {
             auto precedence = GetPrecedence();
             auto mask = right_child ? PR_RIGHT : PR_LEFT;
             bool parens_needed = PRECEDENCE_RULES[parent_precedence][precedence] & mask;
@@ -120,13 +126,13 @@ namespace ASTImpl /* Expr derivatives implementation */ {
                 out << ')';
             }
 
-            void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const override {
+            void DoPrintFormula(std::ostream& out, ExpressionPrecedence precedence) const override {
                 lhs_->PrintFormula(out, precedence);
                 out << static_cast<char>(type_);
                 rhs_->PrintFormula(out, precedence, /* right_child = */ true);
             }
 
-            ExprPrecedence GetPrecedence() const override {
+            [[nodiscard]] ExpressionPrecedence GetPrecedence() const override {
                 switch (type_) {
                 case Add:
                     return EP_ADD;
@@ -139,13 +145,13 @@ namespace ASTImpl /* Expr derivatives implementation */ {
                 default:
                     // have to do this because VC++ has a buggy warning
                     assert(false);
-                    return static_cast<ExprPrecedence>(INT_MAX);
+                    return static_cast<ExpressionPrecedence>(INT_MAX);
                 }
             }
 
             // Метод Evaluate() для бинарных операций.
             // При делении на 0 выбрасывает ошибку вычисления FormulaError
-            double Evaluate(LookupValue lookup_value) const override {
+            [[nodiscard]] double Evaluate(LookupValue lookup_value) const override {
                 double res;
 
                 switch (type_) {
@@ -198,17 +204,17 @@ namespace ASTImpl /* Expr derivatives implementation */ {
                 out << ')';
             }
 
-            void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const override {
+            void DoPrintFormula(std::ostream& out, ExpressionPrecedence precedence) const override {
                 out << static_cast<char>(type_);
                 operand_->PrintFormula(out, precedence);
             }
 
-            ExprPrecedence GetPrecedence() const override {
+            [[nodiscard]] ExpressionPrecedence GetPrecedence() const override {
                 return EP_UNARY;
             }
 
             // Метод Evaluate() для унарных операций.
-            double Evaluate(LookupValue lookup_value) const override {
+            [[nodiscard]] double Evaluate(LookupValue lookup_value) const override {
                 switch (type_) {
                 case Type::UnaryPlus:
                     return +operand_->Evaluate(lookup_value);
@@ -234,16 +240,16 @@ namespace ASTImpl /* Expr derivatives implementation */ {
                 out << value_;
             }
 
-            void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
+            void DoPrintFormula(std::ostream& out, ExpressionPrecedence /* precedence */) const override {
                 out << value_;
             }
 
-            ExprPrecedence GetPrecedence() const override {
+            [[nodiscard]] ExpressionPrecedence GetPrecedence() const override {
                 return EP_ATOM;
             }
 
-            // Для чисел метод возвращает значение числа.
-            double Evaluate(LookupValue /*lookup_value*/) const override {
+            // For numbers the method returns the number value.
+            [[nodiscard]] double Evaluate(LookupValue /*lookup_value*/) const override {
                 return value_;
             }
 
@@ -266,11 +272,11 @@ namespace ASTImpl /* Expr derivatives implementation */ {
                 }
             }
 
-            void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
+            void DoPrintFormula(std::ostream& out, ExpressionPrecedence /* precedence */) const override {
                 Print(out);
             }
 
-            ExprPrecedence GetPrecedence() const override {
+            [[nodiscard]] ExpressionPrecedence GetPrecedence() const override {
                 return EP_ATOM;
             }
 
@@ -416,7 +422,7 @@ FormulaAST ParseFormulaAST(std::istream& in) {
     ASTImpl::ParseASTListener listener;
     tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
 
-    return FormulaAST(listener.MoveRoot(), listener.MoveCells());
+    return {listener.MoveRoot(), listener.MoveCells()};
 }
 
 FormulaAST ParseFormulaAST(const std::string& in_str) {
