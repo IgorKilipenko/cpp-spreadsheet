@@ -55,6 +55,7 @@ if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level proj
     include_directories(src)
 
     include(cmake/utils.cmake)
+    include(cmake/compile_settings.cmake)
     include(cmake/develop.cmake)
 endif()
 
