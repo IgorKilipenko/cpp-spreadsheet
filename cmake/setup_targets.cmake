@@ -1,10 +1,11 @@
 message(STATUS "START SETUP TARGETS...")
 
-# Add all source files except main.cpp
+# Add source files for libspreadsheet
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS
     "${PROJECT_SRC_DIR}/*.cpp"
 )
-list(FILTER sources EXCLUDE REGEX "${PROJECT_SRC_DIR}/main\\.cpp$")
+# Remove main.cpp and tests
+list(FILTER sources EXCLUDE REGEX "$main\\.cpp$|.*/tests/.*")
 
 # Find all public and private headers
 file(GLOB_RECURSE public_headers CONFIGURE_DEPENDS
