@@ -28,7 +28,7 @@ public:
      *         if any referenced cell evaluation results in an error. If multiple errors occur,
      *         any one of them may be returned.
      */
-    virtual Value Evaluate(const SheetInterface& sheet) const = 0;
+    [[nodiscard]] virtual Value Evaluate(const SheetInterface& sheet) const = 0;
 
     /**
      * @brief Returns the expression that describes the formula.
@@ -37,7 +37,7 @@ public:
      *
      * @return The expression representing the formula.
      */
-    virtual std::string GetExpression() const = 0;
+    [[nodiscard]] virtual std::string GetExpression() const = 0;
 
     /**
      * @brief Returns a list of cells that are directly involved in the evaluation of the formula.
@@ -46,7 +46,7 @@ public:
      *
      * @return A vector of Position objects representing the cells referenced by the formula.
      */
-    virtual std::vector<Position> GetReferencedCells() const = 0;
+    [[nodiscard]] virtual std::vector<Position> GetReferencedCells() const = 0;
 };
 
 /**

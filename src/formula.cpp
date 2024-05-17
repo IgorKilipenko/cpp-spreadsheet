@@ -30,7 +30,7 @@ namespace {
     public:
         explicit Formula(std::string expression) : ast_(ParseFormulaAST(expression)){};
 
-        Value Evaluate(const SheetInterface &sheet) const override {
+        [[nodiscard]] Value Evaluate(const SheetInterface &sheet) const override {
             const auto lookup_value = [&sheet](const Position &position) -> double {
                 const CellInterface *cell_ptr = sheet.GetCell(position);
                 if (cell_ptr == nullptr) {
@@ -71,13 +71,13 @@ namespace {
             return res;
         }
 
-        std::string GetExpression() const override {
+        [[nodiscard]] std::string GetExpression() const override {
             std::ostringstream out;
             ast_.PrintFormula(out);
             return out.str();
         }
 
-        std::vector<Position> GetReferencedCells() const override {
+        [[nodiscard]] std::vector<Position> GetReferencedCells() const override {
             const auto &cell_refs = ast_.GetCells();
             auto result = std::vector<Position>(cell_refs.begin(), cell_refs.end());
             formula::helpers::MakeUnique(result);

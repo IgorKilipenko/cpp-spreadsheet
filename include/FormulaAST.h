@@ -25,12 +25,12 @@ public:
     FormulaAST& operator=(FormulaAST&&) = default;
     ~FormulaAST();
 
-    double Execute(LookupValue lookup_value) const;
+    [[nodiscard]] double Execute(LookupValue lookup_value) const;
     void Print(std::ostream& out) const;
     void PrintFormula(std::ostream& out) const;
     void PrintCells(std::ostream& out) const;
     std::forward_list<Position>& GetCells();
-    const std::forward_list<Position>& GetCells() const;
+    [[nodiscard]] const std::forward_list<Position>& GetCells() const;
 
 private:
     std::unique_ptr<ASTImpl::Expr> root_expr_;

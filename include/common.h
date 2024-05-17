@@ -22,8 +22,8 @@ struct Position {
     bool operator==(Position rhs) const;
     bool operator<(Position rhs) const;
 
-    bool IsValid() const;
-    std::string ToString() const;
+    [[nodiscard]] bool IsValid() const;
+    [[nodiscard]] std::string ToString() const;
 
     static Position FromString(std::string_view str);
 
@@ -114,7 +114,7 @@ public:
      * @return The visible value of the cell as a std::variant containing either a string,
      *         a double, or a FormulaError.
      */
-    virtual Value GetValue() const = 0;
+    [[nodiscard]] virtual Value GetValue() const = 0;
 
     /**
      * @brief Returns the internal text of the cell as if it were being edited.
@@ -124,7 +124,7 @@ public:
      *
      * @return The internal text of the cell as a std::string.
      */
-    virtual std::string GetText() const = 0;
+    [[nodiscard]] virtual std::string GetText() const = 0;
 
     /**
      * Returns a list of cells that are directly referenced by this formula.
@@ -168,7 +168,7 @@ public:
      * @param pos The position of the cell to retrieve.
      * @return A pointer to the cell's interface. If the cell is empty, it may return nullptr.
      */
-    virtual const CellInterface* GetCell(Position pos) const = 0;
+    [[nodiscard]] virtual const CellInterface* GetCell(Position pos) const = 0;
 
     /**
      * @brief Retrieves a modifiable pointer to the cell at the given position.
@@ -199,7 +199,7 @@ public:
      *
      * @return The size of the printable area as a Size object.
      */
-    virtual Size GetPrintableSize() const = 0;
+    [[nodiscard]] virtual Size GetPrintableSize() const = 0;
 
     /**
      * @brief Outputs the entire sheet to the provided stream.
