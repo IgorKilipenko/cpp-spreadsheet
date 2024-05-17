@@ -6,11 +6,13 @@ project(spreadsheet
     LANGUAGES CXX
 )
 
+# Set C++ standard to 20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough")
+# Enable creation of compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Source directiory
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -21,24 +23,32 @@ set(PROJECT_PUBLIC_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 # Installation directiory
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-# Add threads library for all lib targets
+# Find required packages
 find_package(Threads REQUIRED)
-link_libraries(Threads::Threads)
-
-# Find Java
 find_package(Java REQUIRED)
 
-# Include the ANTLR setup
+# Add threads library for all lib targets
+link_libraries(Threads::Threads)
+
+# Include ANTLR setup
 include(cmake/install_antlr.cmake)
 
-# Include the source files and create targets
+# Include source files and create targets
 include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level project
+    # Set warning flags for Debug build
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(ENABLE_WARNING ON)
+    endif()
+
     # add include path
     include_directories(include)
+    include_directories(include/spreadsheet)
     include_directories(src/include)
     include_directories(src)
+    include_directories(${ANTLR_FormulaParser_CXX_OUTPUT_DIR})
+    message(STATUS "Include directories: ${ANTLR_FormulaParser_CXX_OUTPUT_DIR}")
 
     include(cmake/utils.cmake)
     include(cmake/develop.cmake)

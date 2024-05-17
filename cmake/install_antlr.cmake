@@ -5,9 +5,9 @@ set(ANTLR4_WITH_STATIC_CRT OFF)
 set(ANTLR_BUILD_SHARED OFF)
 set(ANTLR_BUILD_CPP_TESTS OFF)
 
-message(STATUS "DOWNLOAD ANTLR4 JAR v" ${ANTLR_TAG})
+message(STATUS "DOWNLOAD ANTLR4 GENERATOR v" ${ANTLR_TAG})
 
-# Define the path to the ANTLR JAR file and download it if it does not exist
+# Define the path to the ANTLR GENERATOR JAR file and download it if does not exist
 set(ANTLR_EXECUTABLE "${CMAKE_BINARY_DIR}/antlr/antlr-${ANTLR_TAG}-complete.jar")
 if (NOT EXISTS "${ANTLR_EXECUTABLE}")
     file(
@@ -17,7 +17,7 @@ if (NOT EXISTS "${ANTLR_EXECUTABLE}")
     )
 endif()
 
-message(STATUS "FETCH ANTLR4 CPP")
+message(STATUS "FETCH ANTLR4 RUNTIME CPP")
 
 # Use FetchContent to download and make available the ANTLR C++ runtime
 include(FetchContent)
