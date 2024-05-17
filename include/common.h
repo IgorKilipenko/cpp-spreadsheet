@@ -56,7 +56,7 @@ public:
 
     bool operator==(FormulaError rhs) const;
 
-    std::string_view ToString() const;
+    [[nodiscard]] std::string_view ToString() const;
 
 private:
     Category category_;
