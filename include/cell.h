@@ -27,9 +27,9 @@ private:
     class Impl {
     public:
         virtual ~Impl() = default;
-        virtual CellInterface::Value GetValue() const = 0;
-        virtual std::string GetText() const = 0;
-        virtual std::vector<Position> GetReferencedCells() const {
+        [[nodiscard]] virtual CellInterface::Value GetValue() const = 0;
+        [[nodiscard]] virtual std::string GetText() const = 0;
+        [[nodiscard]] virtual std::vector<Position> GetReferencedCells() const {
             return {};
         }
     };
@@ -37,10 +37,10 @@ private:
     class EmptyImpl : public Impl {
     public:
         EmptyImpl() = default;
-        CellInterface::Value GetValue() const override {
+        [[nodiscard]] CellInterface::Value GetValue() const override {
             return 0.0;
         }
-        std::string GetText() const override {
+        [[nodiscard]] std::string GetText() const override {
             return {};
         }
     };
@@ -48,10 +48,10 @@ private:
     class TextImpl : public Impl {
     public:
         explicit TextImpl(std::string text) : text_{std::move(text)} {}
-        CellInterface::Value GetValue() const override {
+        [[nodiscard]] CellInterface::Value GetValue() const override {
             return text_.length() > 0 && text_[0] == '\'' ? text_.substr(1) : text_;
         }
-        std::string GetText() const override {
+        [[nodiscard]] std::string GetText() const override {
             return text_;
         }
 
@@ -62,18 +62,18 @@ private:
     class FormulaImpl : public Impl {
     public:
         FormulaImpl(std::string text, SheetInterface& sheet) : formula_{ParseFormula(std::move(text))}, sheet_{sheet} {}
-        CellInterface::Value GetValue() const override {
+        [[nodiscard]] CellInterface::Value GetValue() const override {
             FormulaInterface::Value val = formula_->Evaluate(sheet_);
             if (std::holds_alternative<double>(val)) {
                 return std::get<double>(val);
             }
             return std::get<FormulaError>(val);
         }
-        std::string GetText() const override {
+        [[nodiscard]] std::string GetText() const override {
             return '=' + formula_->GetExpression();
         }
 
-        std::vector<Position> GetReferencedCells() const override {
+        [[nodiscard]] std::vector<Position> GetReferencedCells() const override {
             return formula_->GetReferencedCells();
         }
 

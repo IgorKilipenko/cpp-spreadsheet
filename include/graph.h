@@ -64,14 +64,14 @@ namespace graph /* IGraph */ {
     class IGraph {
     public:
         virtual bool AddEdge(Edge edge) = 0;
-        virtual bool HasEdge(const Edge& edge) const = 0;
-        virtual size_t GetVertexCount() const = 0;
-        virtual size_t GetEdgeCount() const = 0;
-        virtual IncidentEdgesRange GetIncidentEdges(VertexId vertex) const = 0;
+        [[nodiscard]] virtual bool HasEdge(const Edge& edge) const = 0;
+        [[nodiscard]] virtual size_t GetVertexCount() const = 0;
+        [[nodiscard]] virtual size_t GetEdgeCount() const = 0;
+        [[nodiscard]] virtual IncidentEdgesRange GetIncidentEdges(VertexId vertex) const = 0;
         virtual bool EraseEdge(const Edge& edge) = 0;
         virtual bool EraseVertex(const VertexId& vertex_id) = 0;
         virtual void Traversal(const VertexId& vertex_id, std::function<bool(const Edge*)> action) const = 0;
-        virtual bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) const = 0;
+        [[nodiscard]] virtual bool DetectCircularDependency(const VertexId& from, const std::vector<VertexId>& to_refs) const = 0;
 
     protected:
         virtual size_t AddEdgesImpl(EdgeContainer::iterator begin, EdgeContainer::iterator end) = 0;
