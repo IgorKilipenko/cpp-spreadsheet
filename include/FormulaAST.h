@@ -18,7 +18,6 @@ class ParsingError : public std::runtime_error {
 using LookupValue = std::optional<std::function<double(const Position&)>>;
 
 class FormulaAST {
-
 public:
     FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells);
     FormulaAST(FormulaAST&&) = default;

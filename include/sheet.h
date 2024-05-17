@@ -23,7 +23,7 @@ namespace spreadsheet /* Sheet definations */ {
 
         const Cell* GetCell(Position pos) const override;
         Cell* GetCell(Position pos) override;
-        
+
         void ClearCell(Position pos) override;
 
         Size GetPrintableSize() const override;
