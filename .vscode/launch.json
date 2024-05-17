@@ -2,6 +2,38 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug App",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/spreadsheet",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "cmake: build",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "$PATH:${workspaceFolder}/build"
+                },
+                {
+                    "name": "LSAN_OPTIONS",
+                    "value": "detect_leaks=0"
+                }
+            ],
+            "logging": {
+                "engineLogging": true
+            },
+        },
+        {
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
@@ -26,23 +58,17 @@
             ]
         },
         {
-            "name": "Debug App",
-            "type": "cppdbg",
+            "name": "(lldb) Debug App",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceRoot}/build/spreadsheet",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
             "preLaunchTask": "cmake: build",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
+            "env": {
+                "PATH": "$PATH:${workspaceFolder}/build",
+                "LSAN_OPTIONS": "verbosity=1:log_threads=1,detect_leaks=0"
+            }
         }
     ]
 }

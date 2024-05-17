@@ -16,6 +16,7 @@ endif()
 
 # warning
 option(ENABLE_WARNING "Enable warning for all project " OFF)
+
 if(ENABLE_WARNING)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         list(APPEND MSVC_OPTIONS "/W3")
