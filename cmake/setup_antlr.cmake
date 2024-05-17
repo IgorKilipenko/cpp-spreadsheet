@@ -1,30 +1,30 @@
 # SetupAntlr.cmake - This file handles the setup for ANTLR
 
-set(ANTLR_TAG 4.13.1)
+set(ANTLR_VERSION 4.13.1)
 set(ANTLR4_WITH_STATIC_CRT OFF)
 set(ANTLR_BUILD_SHARED OFF)
 set(ANTLR_BUILD_CPP_TESTS OFF)
 
-message(STATUS "DOWNLOAD ANTLR4 GENERATOR v" ${ANTLR_TAG})
+message(STATUS "DOWNLOAD ANTLR4 GENERATOR v" ${ANTLR_VERSION})
 
 # Define the path to the ANTLR GENERATOR JAR file and download it if does not exist
-set(ANTLR_EXECUTABLE "${CMAKE_BINARY_DIR}/antlr/antlr-${ANTLR_TAG}-complete.jar")
+set(ANTLR_EXECUTABLE "${CMAKE_BINARY_DIR}/antlr/antlr-${ANTLR_VERSION}-complete.jar")
 if (NOT EXISTS "${ANTLR_EXECUTABLE}")
     file(
         DOWNLOAD
-        "https://www.antlr.org/download/antlr-${ANTLR_TAG}-complete.jar"
+        "https://www.antlr.org/download/antlr-${ANTLR_VERSION}-complete.jar"
         "${ANTLR_EXECUTABLE}"
     )
 endif()
 
-message(STATUS "FETCH ANTLR4 RUNTIME CPP")
+message(STATUS "FETCH ANTLR4 RUNTIME CPP...")
 
 # Use FetchContent to download and make available the ANTLR C++ runtime
 include(FetchContent)
 FetchContent_Declare(
     antlr
     GIT_REPOSITORY https://github.com/antlr/antlr4
-    GIT_TAG ${ANTLR_TAG}
+    GIT_TAG ${ANTLR_VERSION}
     SOURCE_SUBDIR "runtime/Cpp"
 )
 FetchContent_MakeAvailable(antlr)

@@ -31,9 +31,15 @@ find_package(Java REQUIRED)
 link_libraries(Threads::Threads)
 
 # Include ANTLR setup
-include(cmake/install_antlr.cmake)
+include(cmake/setup_antlr.cmake)
+
+# Include DOCTEST setup
+include(cmake/setup_doctest.cmake)
 
 # Include source files and create targets
+include(cmake/setup_targets.cmake)
+
+# Include installation
 include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level project
