@@ -42,13 +42,11 @@ if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level proj
         set(ENABLE_WARNING ON)
     endif()
 
-    # add include path
+    # Add src include dirs
     include_directories(include)
     include_directories(include/spreadsheet)
     include_directories(src/include)
     include_directories(src)
-    include_directories(${ANTLR_FormulaParser_CXX_OUTPUT_DIR})
-    message(STATUS "Include directories: ${ANTLR_FormulaParser_CXX_OUTPUT_DIR}")
 
     include(cmake/utils.cmake)
     include(cmake/develop.cmake)
