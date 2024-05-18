@@ -1,5 +1,13 @@
 message(STATUS "START SETUP TARGETS...")
 
+if(SPREADSHEET_BUILD_SHARED)
+    # Not implemented yet
+    set(LIBRARY_TYPE SHARED)
+else()
+    # Static library Default
+    set(LIBRARY_TYPE STATIC)
+endif()
+
 # Add source files for libspreadsheet
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS
     "${PROJECT_SRC_DIR}/*.cpp"
@@ -13,7 +21,7 @@ file(GLOB_RECURSE public_headers CONFIGURE_DEPENDS
 )
 
 # Create the library
-add_library(libspreadsheet ${sources} ${private_headers} ${ANTLR_FormulaParser_CXX_OUTPUTS})
+add_library(libspreadsheet ${LIBRARY_TYPE} ${sources} ${private_headers} ${ANTLR_FormulaParser_CXX_OUTPUTS})
 target_link_libraries(libspreadsheet PRIVATE antlr4_static)
 set_target_properties(libspreadsheet PROPERTIES
     PUBLIC_HEADER "${public_headers}"

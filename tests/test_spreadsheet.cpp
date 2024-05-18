@@ -1,5 +1,6 @@
-#include "doctest.h"
-#include "spreadsheet.h"
+#include <doctest/doctest.h>
+
+#include "common.h"
 
 inline Position operator"" _pos(const char* str, std::size_t) {
     return Position::FromString(str);

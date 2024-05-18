@@ -1,14 +1,5 @@
 message(STATUS "DEVELOP SETTING...")
 
-# Registering tests
-option(BUILD_UNIT_TESTS "Build unit tests" ON)
-message(STATUS "BUILD_UNIT_TESTS: ${BUILD_UNIT_TESTS}")
-if(BUILD_UNIT_TESTS)
-    #include(CTest)
-    enable_testing()
-    include(cmake/setup_tests.cmake)
-endif()
-
 # Enable address sanitizer
 option(ENABLE_SANITIZER "Enable sanitizer(Debug+Gcc/Clang/AppleClang)" ON)
 
