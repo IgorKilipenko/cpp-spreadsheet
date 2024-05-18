@@ -1,4 +1,4 @@
-message(STATUS "-------------DEVELOP SETTING------------")
+message(STATUS "DEVELOP SETTING...")
 
 # Enable address sanitizer
 option(ENABLE_SANITIZER "Enable sanitizer(Debug+Gcc/Clang/AppleClang)" ON)
@@ -35,4 +35,3 @@ if(ENABLE_WARNING)
     endif()
 endif()
 
-message(STATUS "--------------------------------------------")

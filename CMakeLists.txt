@@ -17,11 +17,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Source directiory
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-# Public include directiory
+# Public (interface) include directiory
 set(PROJECT_PUBLIC_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+# Source directiory
+set(PROJECT_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 # Installation directiory
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+
+# Set build as shared library. Not implemented yet.!
+option(SPREADSHEET_BUILD_SHARED "Build shared library" OFF)
+
+# Enable building tests
+option(SPREADSHEET_BUILD_TESTS "Build tests" ON)
 
 # Find required packages
 find_package(Threads REQUIRED)
@@ -31,9 +40,15 @@ find_package(Java REQUIRED)
 link_libraries(Threads::Threads)
 
 # Include ANTLR setup
-include(cmake/install_antlr.cmake)
+include(cmake/setup_antlr.cmake)
+
+# Include DOCTEST setup
+include(cmake/setup_doctest.cmake)
 
 # Include source files and create targets
+include(cmake/setup_targets.cmake)
+
+# Include installation
 include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level project
@@ -49,7 +64,9 @@ if(CMAKE_PROJECT_NAME STREQUAL "spreadsheet") # if spreadsheet is top-level proj
     include_directories(src)
 
     include(cmake/utils.cmake)
+    include(cmake/compile_settings.cmake)
     include(cmake/develop.cmake)
+    include(cmake/setup_tests.cmake)
 endif()
 
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT spreadsheet)

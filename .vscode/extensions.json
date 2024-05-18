@@ -6,6 +6,7 @@
         "streetsidesoftware.code-spell-checker",
         "donjayamanne.githistory",
         "jeff-hykin.better-cpp-syntax",
-        "ms-vscode.cmake-tools"
+        "ms-vscode.cmake-tools",
+        "matepek.vscode-catch2-test-adapter"
     ]
 }
